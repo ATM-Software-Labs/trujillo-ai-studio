@@ -6,7 +6,7 @@
 [![Discord API](https://img.shields.io/badge/Discord-Interactions%20API-5865F2?style=flat-square&logo=discord)](https://discord.com/developers/docs)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Production Gateway: [ai.trujillomingorance.com](https://ai.trujillomingorance.com)
+Production Gateway: [subdomain.yourdomain.com](https://subdomain.yourdomain.com)
 
 An open-source, edge-native web workspace and Discord bot powered by Cloudflare Workers and Groq LPU inference. It provides fast token streaming with modern open models, multimodal image reasoning, voice transcription, persistent conversation memory, and custom role personas.
 
@@ -104,7 +104,7 @@ Follow these steps to deploy your own instance of the AI Studio and Discord bot 
 ### Step 1: Clone the Repository and Install Dependencies
 
 ```bash
-git clone https://github.com/atrumin16/trujillo-ai-studio.git
+git clone https://github.com/your-github-username/trujillo-ai-studio.git
 cd trujillo-ai-studio
 
 # Install dependencies
@@ -238,3 +238,4 @@ Contributions and pull requests are welcome. Feel free to open an issue on the G
 ## License
 
 Distributed under the MIT License. See [LICENSE](./LICENSE) for full terms.
+
