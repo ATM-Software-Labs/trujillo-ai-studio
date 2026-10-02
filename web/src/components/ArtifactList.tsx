@@ -1,4 +1,4 @@
-import { Eye, ExternalLink, Archive } from 'lucide-react'
+import { Archive } from 'lucide-react'
 import { Button } from './ui/button'
 
 type Artifact = {

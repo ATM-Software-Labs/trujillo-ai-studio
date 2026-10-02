@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Paperclip, Send, Square, PanelLeft, Plus, Search, Copy, Trash2, Pencil, RefreshCw, ThumbsUp, ThumbsDown, Archive, Pin, Image, Link2, Eye } from 'lucide-react'
+import { Paperclip, Send, Square, PanelLeft, Plus, Search, Copy, Trash2, Pencil, RefreshCw, ThumbsUp, ThumbsDown, Archive, Pin, Image, Link2 } from 'lucide-react'
 import { t } from './lib/i18n'
 import { applyChrome, detectLang, loadPrefs, savePrefs, type Prefs, type SettingsTab } from './lib/prefs'
 import {
@@ -399,8 +399,7 @@ export default function App() {
         <div className="flex items-center gap-2 px-3 py-3">
           <img src="/mark.svg" alt="" className="h-7 w-7 rounded-lg" />
           <div className="text-sm font-semibold tracking-tight">{L('app')}</div>
-          </div>
-        )}
+        </div>
         <div className="px-3 pb-2">
           <Button className="w-full justify-start" onClick={startChat}>
             <Plus className="h-4 w-4" /> {L('newChat')}
@@ -684,6 +683,7 @@ export default function App() {
               </div>
             )}
           </div>
+        </div>
         )}
 
         {!showArtifacts && (
@@ -748,6 +748,7 @@ export default function App() {
             {prefs.sendOnEnter ? `${L('enterHint')} · ${L('shiftEnterHint')}` : `${L('ctrlEnterHint')} · ${L('shiftEnterHint')}`}
           </p>
         </div>
+        )}
       </main>
 
       <SettingsDialog

@@ -73,12 +73,10 @@ export async function bumpOps(env, field, n = 1) {
 }
 
 export function normalizeModel(model) {
-export function normalizeModel(model) {
   if (!model) return 'openai/gpt-oss-120b';
   return String(model).trim();
 }
-  return m;
-}
+
 
 export function groqLadder(requested, { vision = false, skipFallback = false } = {}) {
   if (vision) return VISION_MODELS.slice()
