@@ -70,13 +70,14 @@ const X_OAUTH_CLIENT_ID = 'NF94WVVIT1dzSXZNaTJuYjRXSEc6MTpjaQ';
 const X_OAUTH_CLIENT_SECRET = '';
 
 const AVAILABLE_OPEN_MODELS = [
-  { id: 'openai/gpt-oss-120b', name: 'OpenAI GPT OSS 120B (Máxima Capacidad & Código)', context: 131072 },
-  { id: 'qwen/qwen3.6-27b', name: 'Qwen 3.6 27B (Visión Multimodal & Razonamiento)', context: 131072 },
-  { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B (Visión Multimodal Avanzada)', context: 131072 },
-  { id: 'openai/gpt-oss-20b', name: 'OpenAI GPT OSS 20B Turbo (Baja Latencia 0ms)', context: 131072 },
-  { id: 'groq/compound', name: 'Groq Compound (Modelo Compuesto)', context: 131072 }
+const AVAILABLE_OPEN_MODELS = [
+  { id: 'llama-3.1-8b-instant', name: 'MetaLlama 3.1 8B', context: 131072 },
+  { id: 'llama-3.3-70b-versatile', name: 'MetaLlama 3.3 70B', context: 131072 },
+  { id: 'openai/gpt-oss-120b', name: 'OpenAI GPT OSS 120B', context: 131072 },
+  { id: 'openai/gpt-oss-20b', name: 'OpenAI GPT OSS 20B', context: 131072 },
+  { id: 'whisper-large-v3', name: 'OpenAI Whisper', context: 0 },
+  { id: 'whisper-large-v3-turbo', name: 'OpenAI Whisper Large V3 Turbo', context: 0 }
 ];
-
 const InteractionType = {
   PING: 1,
   APPLICATION_COMMAND: 2,
@@ -2230,6 +2231,32 @@ async function peekTokenUsage(env, userIdentifier) {
   };
 }
 
+export function sanitizeVisionPayload(messages, systemPrompt) {
+  if (!messages || messages.length === 0) return [{ role: 'system', content: systemPrompt }];
+  const lastMessage = messages[messages.length - 1];
+  
+  // Si contiene imagen, NO enviar todo el historial previo
+  const isVision = Array.isArray(lastMessage?.content) && 
+                   lastMessage.content.some((c) => c.type === 'image_url');
+
+  if (isVision) {
+    const userText = lastMessage.content.find((c) => c.type === 'text')?.text?.toLowerCase() || '';
+    const isOCR = userText.includes('extrae') || userText.includes('ocr') || userText.includes('texto') || userText.includes('código');
+    
+    const visionPrompt = isOCR 
+      ? "Extrae el texto legible o los fragmentos de código de la imagen en texto plano estructurado. No agregues conclusiones ni introducciones."
+      : "Analiza la imagen técnica y responde de forma breve, estructurada y sin preámbulos a la duda del usuario.";
+
+    return [
+      { role: 'system', content: visionPrompt },
+      lastMessage
+    ];
+  }
+
+  const generalPrompt = "Eres Trujillo AI, un asistente técnico directo, conciso y sobrio. Responde de forma estructurada sin introducciones ni cortesía innecesaria.";
+  return [{ role: 'system', content: generalPrompt }, ...messages.filter(m => m.role !== 'system').slice(-6)];
+}
+
 async function callGroqChat({ groqApiKey, messages, requestedModel = 'openai/gpt-oss-120b', stream = false, maxTokens = 2048, vision = false, skipFallback = false, temperature = 0.65, env = null, ctx = null }) {
   const sanitizedModel = normalizeModel(requestedModel);
   const ladder = groqLadder(sanitizedModel, { vision, skipFallback });
@@ -2464,7 +2491,7 @@ ${DEFINITION_EXCELLENCE_DIRECTIVE}
 
     const groqResult = await callGroqChat({
       groqApiKey,
-      messages,
+      messages: sanitizeVisionPayload(messages, systemPrompt),
       requestedModel: useVision ? VISION_MODELS[0] : (model || env.GROQ_MODEL || 'openai/gpt-oss-120b'),
       stream: true,
       maxTokens: effectiveMaxTokens,

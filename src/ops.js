@@ -73,17 +73,10 @@ export async function bumpOps(env, field, n = 1) {
 }
 
 export function normalizeModel(model) {
+export function normalizeModel(model) {
   if (!model) return 'openai/gpt-oss-120b';
-  const m = String(model).trim();
-  if (m === 'llama-3.2-11b-vision-preview' || m === 'llama-3.2-90b-vision-preview' || m.includes('vision-preview')) {
-    return 'qwen/qwen3.6-27b';
-  }
-  if (m === 'llama-3.1-70b-versatile' || m === 'llama-3.3-70b-versatile') {
-    return 'openai/gpt-oss-120b';
-  }
-  if (m.startsWith('llama-3.2-') && m.includes('preview')) {
-    return 'openai/gpt-oss-20b';
-  }
+  return String(model).trim();
+}
   return m;
 }
 

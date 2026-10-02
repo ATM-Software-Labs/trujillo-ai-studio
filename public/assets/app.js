@@ -83,8 +83,9 @@
   var abortCtl = null;
   var selectedModel = localStorage.getItem('ta_model') || 'openai/gpt-oss-120b';
   var MODELS = [
+    { id: 'llama-3.1-8b-instant', name: 'MetaLlama 3.1 8B', desc: 'm8' },
+    { id: 'llama-3.3-70b-versatile', name: 'MetaLlama 3.3 70B', desc: 'm70' },
     { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', desc: 'm120' },
-    { id: 'qwen/qwen3.6-27b', name: 'Qwen 3.6 27B', desc: 'm27' },
     { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', desc: 'm20' }
   ];
   var TONES = {

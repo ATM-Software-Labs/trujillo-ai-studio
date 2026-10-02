@@ -13,22 +13,14 @@ if (!BOT_TOKEN || !APPLICATION_ID) {
   process.exit(1);
 }
 
+
 const MODEL_CHOICES = [
-  { 
-    name: "OpenAI GPT OSS 120B (Max Quality & Code)",
-    name_localizations: { "es-ES": "OpenAI GPT OSS 120B (Máxima Calidad & Código)" },
-    value: "openai/gpt-oss-120b" 
-  },
-  { 
-    name: "Qwen 3.6 27B (Deep Logical Reasoning)", 
-    name_localizations: { "es-ES": "Qwen 3.6 27B (Razonamiento Lógico Profundo)" },
-    value: "qwen/qwen3.6-27b" 
-  },
-  { 
-    name: "OpenAI GPT OSS 20B (Ultra Fast 0ms)", 
-    name_localizations: { "es-ES": "OpenAI GPT OSS 20B (Ultra Rápido 0ms)" },
-    value: "openai/gpt-oss-20b" 
-  }
+  { name: "MetaLlama 3.1 8B", value: "llama-3.1-8b-instant" },
+  { name: "MetaLlama 3.3 70B", value: "llama-3.3-70b-versatile" },
+  { name: "OpenAI GPT OSS 120B", value: "openai/gpt-oss-120b" },
+  { name: "OpenAI GPT OSS 20B", value: "openai/gpt-oss-20b" },
+  { name: "OpenAI Whisper", value: "whisper-large-v3" },
+  { name: "OpenAI Whisper Large V3 Turbo", value: "whisper-large-v3-turbo" }
 ];
 
 const LENGTH_CHOICES = [
