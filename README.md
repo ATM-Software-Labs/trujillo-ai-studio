@@ -6,7 +6,7 @@
 [![Discord API](https://img.shields.io/badge/Discord-Interactions%20API-5865F2?style=flat-square&logo=discord)](https://discord.com/developers/docs)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Production Gateway: [subdomain.yourdomain.com](https://subdomain.yourdomain.com)
+Production Gateway: [subdomain.yourdomain.com](https://ai.trujillomingorance.com)
 
 An open-source, edge-native web workspace and Discord bot powered by Cloudflare Workers and Groq LPU inference. It provides fast token streaming with modern open models, multimodal image reasoning, voice transcription, persistent conversation memory, and custom role personas.
 
