@@ -307,6 +307,7 @@
       else if (tab === 'forgot') { forgotForm.style.display = 'flex'; tabsNav.style.display = 'none'; }
       else if (tab === 'reset') { resetForm.style.display = 'flex'; tabsNav.style.display = 'none'; }
       else if (tab === 'mailconfirm' && mailForm) { mailForm.style.display = 'flex'; tabsNav.style.display = 'none'; }
+    }
     function finishLogin(data) {
       localStorage.setItem('trujillo_ai_token', data.token);
       localStorage.setItem('auth_token', data.token);
