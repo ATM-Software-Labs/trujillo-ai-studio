@@ -19,11 +19,6 @@
   var currentUser = null;
   try { currentUser = JSON.parse(localStorage.getItem('trujillo_ai_user') || 'null'); } catch(e) {}
   var authToken = localStorage.getItem('trujillo_ai_token') || '';
-  if (authToken) {
-    try {
-      document.cookie = 'ta_session=' + encodeURIComponent(authToken) + '; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=2592000';
-    } catch (e) {}
-  }
   (function consumeSocialCallback() {
     try {
       var params = new URLSearchParams(location.search);
@@ -41,7 +36,6 @@
           if (!res.ok || !res.d.token) return;
           localStorage.setItem('trujillo_ai_token', res.d.token);
           localStorage.setItem('trujillo_ai_user', JSON.stringify(res.d.user));
-          document.cookie = 'ta_session=' + encodeURIComponent(res.d.token) + '; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=2592000';
           location.reload();
         }).catch(function () {});
     } catch (e) {}
@@ -83,9 +77,8 @@
   var abortCtl = null;
   var selectedModel = localStorage.getItem('ta_model') || 'openai/gpt-oss-120b';
   var MODELS = [
-    { id: 'llama-3.1-8b-instant', name: 'MetaLlama 3.1 8B', desc: 'm8' },
-    { id: 'llama-3.3-70b-versatile', name: 'MetaLlama 3.3 70B', desc: 'm70' },
     { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', desc: 'm120' },
+    { id: 'qwen/qwen3.6-27b', name: 'Qwen 3.6 27B', desc: 'm27' },
     { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', desc: 'm20' }
   ];
   var TONES = {

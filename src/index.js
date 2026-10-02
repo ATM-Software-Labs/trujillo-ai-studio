@@ -70,7 +70,6 @@ const X_OAUTH_CLIENT_ID = 'NF94WVVIT1dzSXZNaTJuYjRXSEc6MTpjaQ';
 const X_OAUTH_CLIENT_SECRET = '';
 
 const AVAILABLE_OPEN_MODELS = [
-const AVAILABLE_OPEN_MODELS = [
   { id: 'llama-3.1-8b-instant', name: 'MetaLlama 3.1 8B', context: 131072 },
   { id: 'llama-3.3-70b-versatile', name: 'MetaLlama 3.3 70B', context: 131072 },
   { id: 'openai/gpt-oss-120b', name: 'OpenAI GPT OSS 120B', context: 131072 },
