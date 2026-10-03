@@ -1268,7 +1268,7 @@ export default {
     }
 
     // ========================================================
-    // 6. ENDPOINTS DE AUTENTICACIÓN Y RESEND
+    // 6. ENDPOINTS DE AUTENTICACIÓN Y CORREO
     // ========================================================
     if (url.pathname === '/api/auth/register' && request.method === 'POST') {
       try {
@@ -3874,7 +3874,7 @@ function emailCopy(locale) {
       secCta: 'Revisar cuenta',
       secFooter: 'Si no fuiste tú, escribe a',
       testTitle: 'Así se ven los correos de Trujillo AI',
-      testBody: 'Este es un correo de prueba enviado desde Ajustes. Si lo estás leyendo, Resend está funcionando correctamente.',
+      testBody: 'Este es un correo de prueba enviado desde Ajustes. Si lo estás leyendo, el correo transaccional está funcionando correctamente.',
       testCta: 'Volver a Ajustes',
       testSubject: 'Correo de prueba — Trujillo AI',
       privacy: 'Privacidad',
@@ -3898,7 +3898,7 @@ function emailCopy(locale) {
       secCta: 'Review account',
       secFooter: 'If this was not you, write to',
       testTitle: 'This is how Trujillo AI email looks',
-      testBody: 'This is a test message from Settings. If you can read it, Resend is working.',
+      testBody: 'This is a test message from Settings. If you can read it, transactional email is working.',
       testCta: 'Back to Settings',
       testSubject: 'Test email — Trujillo AI',
       privacy: 'Privacy',
@@ -3922,7 +3922,7 @@ function emailCopy(locale) {
       secCta: 'Voir le compte',
       secFooter: 'Si ce n’est pas toi, écris à',
       testTitle: 'Voici à quoi ressemblent les e-mails Trujillo AI',
-      testBody: 'E-mail de test envoyé depuis Réglages. Resend fonctionne.',
+      testBody: 'E-mail de test envoyé depuis Réglages. L’envoi transactionnel fonctionne.',
       testCta: 'Retour',
       testSubject: 'E-mail de test — Trujillo AI',
       privacy: 'Confidentialité',
@@ -3946,7 +3946,7 @@ function emailCopy(locale) {
       secCta: 'Ver conta',
       secFooter: 'Se não foste tu, escreve para',
       testTitle: 'Assim se veem os e-mails do Trujillo AI',
-      testBody: 'E-mail de teste enviado a partir das Definições. O Resend está a funcionar.',
+      testBody: 'E-mail de teste enviado a partir das Definições. O envio transacional está a funcionar.',
       testCta: 'Voltar',
       testSubject: 'E-mail de teste — Trujillo AI',
       privacy: 'Privacidade',
@@ -3970,7 +3970,7 @@ function emailCopy(locale) {
       secCta: 'Konto prüfen',
       secFooter: 'Warst du es nicht, schreib an',
       testTitle: 'So sehen Trujillo-AI-Mails aus',
-      testBody: 'Testmail aus den Einstellungen. Resend funktioniert.',
+      testBody: 'Testmail aus den Einstellungen. Der transaktionale Versand funktioniert.',
       testCta: 'Zurück',
       testSubject: 'Testmail — Trujillo AI',
       privacy: 'Datenschutz',
@@ -3994,7 +3994,7 @@ function emailCopy(locale) {
       secCta: 'Controlla l’account',
       secFooter: 'Se non sei stato tu, scrivi a',
       testTitle: 'Così sono le email di Trujillo AI',
-      testBody: 'Email di prova da Impostazioni. Resend funziona.',
+      testBody: 'Email di prova da Impostazioni. L’invio transazionale funziona.',
       testCta: 'Indietro',
       testSubject: 'Email di prova — Trujillo AI',
       privacy: 'Privacy',
@@ -4018,7 +4018,7 @@ function emailCopy(locale) {
       secCta: 'Revisa el compte',
       secFooter: 'Si no has estat tu, escriu a',
       testTitle: 'Així es veuen els correus de Trujillo AI',
-      testBody: 'Correu de prova enviat des d’Ajustos. Resend funciona.',
+      testBody: 'Correu de prova enviat des d’Ajustos. L’enviament transaccional funciona.',
       testCta: 'Torna',
       testSubject: 'Correu de prova — Trujillo AI',
       privacy: 'Privadesa',
@@ -4042,7 +4042,7 @@ function emailCopy(locale) {
       secCta: '查看账户',
       secFooter: '如非本人操作，请联系',
       testTitle: '这就是 Trujillo AI 邮件的样子',
-      testBody: '这是设置里发出的测试邮件。能看到说明 Resend 工作正常。',
+      testBody: '这是设置里发出的测试邮件。能看到说明事务邮件工作正常。',
       testCta: '返回设置',
       testSubject: '测试邮件 — Trujillo AI',
       privacy: '隐私',
@@ -4170,60 +4170,64 @@ async function runDailyOpsReport(env, meta = {}) {
   return { ...result, ...record };
 }
 
+function parseMailbox(raw) {
+  const value = String(raw || '').trim();
+  const match = value.match(/^(.*)<([^>]+)>\s*$/);
+  if (!match) return { email: value };
+  const name = match[1].trim().replace(/^["']|["']$/g, '');
+  const email = match[2].trim();
+  return name ? { name, email } : { email };
+}
+
 async function sendAppEmail(env, opts) {
   const recipients = normalizeEmailList(opts.to).length
     ? normalizeEmailList(opts.to)
     : ownerInbox(env);
   if (!recipients.length) return { ok: false, error: 'Destinatario inválido' };
 
-  const resendApiKey = env.RESEND_API_KEY;
-  if (!resendApiKey) {
-    return { ok: false, error: 'RESEND_API_KEY no configurada en Cloudflare Secrets.' };
+  const brevoApiKey = env.BREVO_API_KEY;
+  if (!brevoApiKey) {
+    return { ok: false, error: 'BREVO_API_KEY no configurada en Cloudflare Secrets.' };
   }
 
-  const senders = [
-    `${APP_FROM_NAME} <${APP_FROM_EMAIL}>`,
-    `Trujillo AI <onboarding@resend.dev>`
-  ];
+  const fromDisplay = `${APP_FROM_NAME} <${APP_FROM_EMAIL}>`;
+  const sender = parseMailbox(fromDisplay);
+  const toList = recipients.map((email) => ({ email }));
 
-  const payloadBase = {
-    to: recipients,
-    subject: opts.subject,
-    text: opts.text,
-    html: opts.html,
-    tags: [
-      { name: 'category', value: opts.tag || 'transactional' },
-      { name: 'app', value: 'trujillo-ai' }
-    ]
+  const payload = {
+    sender,
+    to: toList,
+    subject: opts.subject
   };
-  if (opts.replyTo) payloadBase.reply_to = opts.replyTo;
-  if (opts.headers) payloadBase.headers = opts.headers;
+  if (opts.html) payload.htmlContent = opts.html;
+  if (opts.text) payload.textContent = opts.text;
+  if (opts.replyTo) {
+    const reply = parseMailbox(opts.replyTo);
+    if (reply.email) payload.replyTo = { email: reply.email };
+  }
 
   let lastError = null;
-  for (const fromDisplay of senders) {
-    try {
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ ...payloadBase, from: fromDisplay })
-      });
+  try {
+    const brevoRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': brevoApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
 
-      const data = await resendRes.json().catch(() => ({}));
-      if (resendRes.ok) return { ok: true, id: data?.id, sender: fromDisplay, to: recipients };
-
-      lastError = data?.message || `HTTP ${resendRes.status}`;
-      if (!lastError.toLowerCase().includes('domain') && !lastError.toLowerCase().includes('verify')) {
-        break;
-      }
-    } catch (e) {
-      lastError = e?.message;
+    const data = await brevoRes.json().catch(() => ({}));
+    if (brevoRes.status === 201) {
+      return { ok: true, id: data?.messageId || data?.id, sender: fromDisplay, to: recipients };
     }
+
+    lastError = (typeof data?.message === 'string' && data.message) || `HTTP ${brevoRes.status}`;
+  } catch (e) {
+    lastError = e?.message;
   }
 
-  return { ok: false, error: lastError || 'Resend rechazó el envío' };
+  return { ok: false, error: lastError || 'Brevo rechazó el envío' };
 }
 
 function asUser(val) {

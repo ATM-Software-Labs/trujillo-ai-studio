@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "npm run build:web && wrangler deploy",
+    "build": "npm run build:web",
     "build:web": "node scripts/extract-assets.mjs && node scripts/addThemes.cjs",
     "test": "node scripts/test-memory.mjs",
     "register": "node scripts/register.js",
