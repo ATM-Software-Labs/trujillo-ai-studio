@@ -163,8 +163,8 @@ npx wrangler secret put DISCORD_PUBLIC_KEY
 # 4. Discord Bot Token (from Discord Developer Portal -> Bot tab)
 npx wrangler secret put DISCORD_BOT_TOKEN
 
-# --- OPTIONAL: Transactional Emails (Resend) ---
-npx wrangler secret put RESEND_API_KEY
+# --- OPTIONAL: Transactional Emails (Brevo) ---
+npx wrangler secret put BREVO_API_KEY
 ```
 
 ---
