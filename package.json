@@ -24,6 +24,6 @@
     "discord-interactions": "^4.1.2"
   },
   "devDependencies": {
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.147.0"
   }
 }
