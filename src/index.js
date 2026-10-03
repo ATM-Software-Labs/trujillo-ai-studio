@@ -4104,7 +4104,7 @@ ${cta}
 <tr>
 <td>
   <p style="margin:0;font-family:ui-monospace,monospace;font-size:11px;line-height:1.6;color:#71717a;">
-    <strong style="color:#a1a1aa;font-weight:600;">TRUJILLO AI</strong> &middot; Alberto Trujillo Mingorance<br>
+    <strong style="color:#a1a1aa;font-weight:600;">TRUJILLO AI</strong> &middot; <a href="https://trujillomingorance.com/sobre-mi" style="color:#a1a1aa;text-decoration:none;">Alberto Trujillo Mingorance</a><br>
     <a href="${APP_ORIGIN}" style="color:#ffffff;text-decoration:none;">ai.trujillomingorance.com</a>
     &nbsp;&middot;&nbsp;<a href="${APP_ORIGIN}/privacy-policy" style="color:#71717a;text-decoration:underline;">${escapeEmail(copy.privacy)}</a>
     &nbsp;&middot;&nbsp;<a href="${APP_ORIGIN}/login" style="color:#71717a;text-decoration:underline;">${escapeEmail(copy.unsub)}</a>
