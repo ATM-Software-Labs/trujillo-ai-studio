@@ -25,9 +25,9 @@ assert(p.notes.some((n) => /python/i.test(n.fact || n.text)), 'python kept')
 assert(!p.notes.some((n) => /typescript/i.test(n.fact || n.text) && !/python/i.test(n.fact || n.text)), 'ts dropped')
 
 p = applyTurn(p, { prompt: 'tengo un examen el viernes', now: friday }).profile
-const block = formatProfileBlock(p, '¿cómo preparo el examen de mates?')
+const block = formatProfileBlock(p, '¿cómo preparo el examen de mates?', { now: friday })
 assert(/examen/i.test(block), 'schedule selected for exam query')
-const codeBlock = formatProfileBlock(p, 'falla el import en python')
+const codeBlock = formatProfileBlock(p, 'falla el import en python', { now: friday })
 assert(/python/i.test(codeBlock), 'lang selected for code query')
 const factsInCode = (codeBlock.match(/^- /gm) || []).length
 assert(factsInCode <= 5, 'cap 5 facts')
@@ -59,7 +59,7 @@ assert(adaptiveProf.preferredStack.includes('TypeScript'), 'TypeScript in prefer
 assert(adaptiveProf.preferredStack.includes('React'), 'React in preferredStack')
 assert(adaptiveProf.preferredStack.includes('Tailwind'), 'Tailwind in preferredStack')
 
-const adaptiveBlock = formatProfileBlock(adaptiveProf, 'cómo estructurar componentes')
+const adaptiveBlock = formatProfileBlock(adaptiveProf, 'cómo estructurar componentes', { now: friday + 3000 })
 assert(adaptiveBlock.includes('Senior / Avanzado'), 'block contains senior directive')
 assert(adaptiveBlock.includes('Directo'), 'block contains direct directive')
 assert(adaptiveBlock.includes('React'), 'block mentions user stack')

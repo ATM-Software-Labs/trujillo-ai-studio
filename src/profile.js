@@ -60,8 +60,7 @@ export async function saveProfile(env, ident, profile) {
   await env.BOT_MEMORY.put(profileKey(ident), JSON.stringify(clean), ttl ? { expirationTtl: ttl } : undefined)
 }
 
-export function sanitizeProfile(p) {
-  const now = Date.now()
+export function sanitizeProfile(p, now = Date.now()) {
   const out = { ...emptyProfile(), ...(p || {}) }
   out.enabled = p?.enabled !== false
   out.name = String(out.name || '').trim().slice(0, 60)
@@ -116,7 +115,7 @@ export function detectStackInText(text) {
 }
 
 export function applyTurn(profile, { prompt, topic, locale, lengthMode, accountName, timezone, tonePreference, expertiseLevel, now = Date.now() }) {
-  const next = sanitizeProfile(profile)
+  const next = sanitizeProfile(profile, now)
   next.turns = (next.turns || 0) + 1
   if (locale) next.locale = String(locale).slice(0, 8)
   if (lengthMode && ['corto', 'normal', 'extendido'].includes(lengthMode)) next.length = lengthMode
@@ -160,7 +159,7 @@ export function applyTurn(profile, { prompt, topic, locale, lengthMode, accountN
     next.topics = {}
     next.preferredStack = []
     next.updatedAt = now
-    return { profile: sanitizeProfile(next), added: [], forgotten, updated: [], forgetAll: true }
+    return { profile: sanitizeProfile(next, now), added: [], forgotten, updated: [], forgetAll: true }
   }
 
   const forgotten = []
@@ -171,7 +170,7 @@ export function applyTurn(profile, { prompt, topic, locale, lengthMode, accountN
   forgotten.push(...merged.forgotten)
   merged.profile.updatedAt = now
   return {
-    profile: sanitizeProfile(merged.profile),
+    profile: sanitizeProfile(merged.profile, now),
     added: merged.added,
     forgotten,
     updated: merged.updated,
@@ -211,10 +210,10 @@ const TOPIC_LABEL = {
 /**
  * Compact system-prompt block. If `query` is set, only 3–5 relevant facts are injected.
  */
-export function formatProfileBlock(profile, query = '') {
-  const p = sanitizeProfile(profile)
+export function formatProfileBlock(profile, query = '', opts = {}) {
+  const now = opts.now || Date.now()
+  const p = sanitizeProfile(profile, now)
   if (!p.enabled) return ''
-  const now = Date.now()
   const live = (p.notes || []).filter((n) => !isExpired(n, now))
   const selected = query
     ? selectRelevantFacts(live, query, { limit: 5, now })
