@@ -40,6 +40,8 @@ X_CLIENT_ID = "NF94WVVIT1dzSXZNaTJuYjRXSEc6MTpjaQ"
 OWNER_EMAIL = "alberto@trujillomingorance.com"
 OWNER_INBOX = "alberto@trujillomingorance.com"
 OWNER_EMAILS = "alberto@trujillomingorance.com,atrumin16@gmail.com"
+# Secreto opcional del gateway OpenAI (no va aquí):
+#   npx wrangler secret put GATEWAY_API_KEY
 
 [[kv_namespaces]]
 binding = "BOT_MEMORY"

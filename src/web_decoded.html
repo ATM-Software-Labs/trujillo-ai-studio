@@ -1477,9 +1477,13 @@
   var publishedArtifacts = [];
   var abortCtl = null;
   var selectedModel = localStorage.getItem('ta_model') || 'openai/gpt-oss-120b';
+  if (selectedModel === 'qwen/qwen3.6-27b' || selectedModel === 'qwen/qwen3.6') {
+    selectedModel = 'qwen/qwen3.8-27b';
+    try { localStorage.setItem('ta_model', selectedModel); } catch(e) {}
+  }
   var MODELS = [
     { id: 'openai/gpt-oss-120b', name: 'GPT OSS 120B', desc: 'm120' },
-    { id: 'qwen/qwen3.6-27b', name: 'Qwen 3.6 27B', desc: 'm27' },
+    { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B', desc: 'm27' },
     { id: 'openai/gpt-oss-20b', name: 'GPT OSS 20B', desc: 'm20' }
   ];
   var TONES = {

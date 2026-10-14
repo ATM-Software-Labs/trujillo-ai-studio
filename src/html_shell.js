@@ -1,6 +1,6 @@
-import { ORIGIN, BRAND, jsonLdFor, hreflangLinks } from './seo.js'
+import { ORIGIN, BRAND, jsonLdFor, hreflangLinks, localizedUrl } from './seo.js'
 
-const ASSET_V = '50'
+const ASSET_V = '51'
 
 function esc(s) {
   return String(s || '')
@@ -10,6 +10,7 @@ function esc(s) {
 }
 
 export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', ogType = 'website', robots = 'index, follow', geo = null }) {
+  const canonicalUrl = localizedUrl(path, lang)
   const url = ORIGIN + path
   const css = kind === 'app' ? '/assets/app.css' : '/assets/site.css'
   const js = kind === 'app' ? '/assets/app.js' : '/assets/site.js'
@@ -43,9 +44,9 @@ export function htmlShell({ title, description, path, kind = 'site', page = '', 
 <meta name="theme-color" content="#080c14">
 <meta name="color-scheme" content="dark">
 <meta name="robots" content="${esc(robotsFull)}">
-<link rel="canonical" href="${esc(url)}">
+<link rel="canonical" href="${esc(canonicalUrl)}">
 <link rel="sitemap" type="application/xml" href="${ORIGIN}/sitemap.xml">
-${hreflangLinks(url)}
+${hreflangLinks(path)}
 <link rel="icon" href="/avatar.png">
 <link rel="apple-touch-icon" href="${ORIGIN}/avatar.png">
 <link rel="manifest" href="/manifest.json">
@@ -103,6 +104,8 @@ export function htmlResponse(opts, status = 200, extraHeaders = {}) {
       'CDN-Cache-Control': isApp ? 'no-store' : 'max-age=86400',
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), microphone=(self), geolocation=()',
       ...extraHeaders,
     },
   })

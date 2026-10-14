@@ -71,7 +71,7 @@
       '<p class="lede">' + t('modLede') + '</p></header>' +
       '<main class="wrap"><div class="grid-2">' +
       '<article class="card"><h3>GPT OSS 120B</h3><p>' + t('m120') + '</p></article>' +
-      '<article class="card"><h3>Qwen 3.6 27B</h3><p>' + t('m27') + '</p></article>' +
+      '<article class="card"><h3>Qwen 3.8 27B</h3><p>' + t('m27') + '</p></article>' +
       '<article class="card"><h3>GPT OSS 20B</h3><p>' + t('m20') + '</p></article>' +
       '<article class="card"><h3>Compound</h3><p>' + t('mComp') + '</p></article>' +
       '</div></main>' + footer();

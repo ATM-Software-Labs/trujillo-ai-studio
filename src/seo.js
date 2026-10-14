@@ -62,13 +62,28 @@ export function pageMeta(page, lang = 'es') {
   }
 }
 
-export function hreflangLinks(url) {
-  return HREFLANGS.map((c) => `<link rel="alternate" hreflang="${c}" href="${url}">`).join('\n') +
-    `\n<link rel="alternate" hreflang="x-default" href="${url}">`
+export function localizedUrl(path, lang = 'es') {
+  let clean = String(path || '/').replace(/^https?:\/\/[^/]+/, '')
+  clean = clean === '/index.html' ? '/' : clean
+  if (!clean.startsWith('/')) clean = '/' + clean
+  if (!lang || lang === 'es') {
+    return ORIGIN + clean
+  }
+  return ORIGIN + '/' + lang + (clean === '/' ? '' : clean)
+}
+
+export function hreflangLinks(pathOrUrl) {
+  const clean = String(pathOrUrl || '/').replace(/^https?:\/\/[^/]+/, '').replace(/^\/[a-z]{2}(?:-[a-zA-Z]{2})?(?=\/|$)/, '') || '/'
+  const esUrl = localizedUrl(clean, 'es')
+  const links = HREFLANGS.map((c) => `<link rel="alternate" hreflang="${c}" href="${localizedUrl(clean, c)}">`)
+  links.push(`<link rel="alternate" hreflang="x-default" href="${esUrl}">`)
+  return links.join('\n')
 }
 
 export function jsonLdFor(path = '/') {
-  const url = ORIGIN + (path === '/index.html' ? '/' : path)
+  const clean = (path === '/index.html' ? '/' : path)
+  const url = ORIGIN + clean
+  const pageName = clean === '/' ? 'Inicio' : clean.slice(1).charAt(0).toUpperCase() + clean.slice(2).replace(/[-_/]/g, ' ')
   return {
     '@context': 'https://schema.org',
     '@graph': [
@@ -105,6 +120,25 @@ export function jsonLdFor(path = '/') {
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
         description: COPY.en.homeDesc,
         publisher: { '@id': ORIGIN + '/#organization' },
+        featureList: 'Low-latency Groq LPU inference, Multimodal image analysis, Context memory, Speech transcription, Fast edge streaming'
+      },
+      {
+        '@type': 'BreadcrumbList',
+        '@id': url + '#breadcrumbs',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: ORIGIN + '/'
+          },
+          ...(clean !== '/' ? [{
+            '@type': 'ListItem',
+            position: 2,
+            name: pageName,
+            item: url
+          }] : [])
+        ]
       },
       {
         '@type': 'SoftwareApplication',
@@ -122,9 +156,10 @@ export function jsonLdFor(path = '/') {
         '@type': 'WebPage',
         '@id': url + '#webpage',
         url,
-        name: path === '/' ? BRAND : undefined,
+        name: clean === '/' ? BRAND : undefined,
         isPartOf: { '@id': ORIGIN + '/#website' },
         about: { '@id': ORIGIN + '/#app' },
+        breadcrumb: { '@id': url + '#breadcrumbs' }
       },
     ],
   }
@@ -164,7 +199,7 @@ export function sitemapXml() {
   ]
   const urls = pages.map(([path, priority, changefreq]) => {
     const loc = ORIGIN + path
-    const alts = HREFLANGS.map((c) => `    <xhtml:link rel="alternate" hreflang="${c}" href="${loc}"/>`).join('\n')
+    const alts = HREFLANGS.map((c) => `    <xhtml:link rel="alternate" hreflang="${c}" href="${localizedUrl(path, c)}"/>`).join('\n')
     return `  <url>
     <loc>${loc}</loc>
     <lastmod>${lastmod}</lastmod>

@@ -43,6 +43,7 @@ import {
   FAST_TEXT_MODEL,
   VISION_MODELS
 } from './ops.js';
+import { handleOpenAIChatCompletions, handleOpenAIModels, rutaOpenAI } from './openai_gateway.js';
 import {
   applyEnrichment,
   applyTurn,
@@ -74,6 +75,8 @@ const AVAILABLE_OPEN_MODELS = [
   { id: 'llama-3.3-70b-versatile', name: 'MetaLlama 3.3 70B', context: 131072 },
   { id: 'openai/gpt-oss-120b', name: 'OpenAI GPT OSS 120B', context: 131072 },
   { id: 'openai/gpt-oss-20b', name: 'OpenAI GPT OSS 20B', context: 131072 },
+  { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B Vision & Reasoning', context: 131072 },
+  { id: 'llama-3.2-11b-vision-preview', name: 'Llama 3.2 11B Vision', context: 131072 },
   { id: 'whisper-large-v3', name: 'OpenAI Whisper', context: 0 },
   { id: 'whisper-large-v3-turbo', name: 'OpenAI Whisper Large V3 Turbo', context: 0 }
 ];
@@ -1244,8 +1247,8 @@ export default {
           } catch(e) {}
         }
 
-        const width = parseInt(body.width, 10) || 1024;
-        const height = parseInt(body.height, 10) || 1024;
+        const width = Math.min(1536, Math.max(256, parseInt(body.width, 10) || 1024));
+        const height = Math.min(1536, Math.max(256, parseInt(body.height, 10) || 1024));
         const seed = Math.floor(Math.random() * 10000000);
         const encodedPrompt = encodeURIComponent(enhancedPrompt);
         const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}`;
@@ -1365,7 +1368,7 @@ export default {
         setInRam(`user_email_${email}`, userRecord);
         deleteFromRam(`pending_user_${email}`);
 
-        const token = await generateJwtToken(pending.id, email, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+        const token = await generateJwtToken(pending.id, email, getJwtSecret(env));
         ctx.waitUntil(sendWelcomeEmail(env, userRecord));
         return makeAuthResponse({
           ok: true,
@@ -1404,7 +1407,7 @@ export default {
         }
 
         const tier = isOwnerUser(email, env) ? 'enterprise' : (userRecord.tier || 'free');
-        const token = await generateJwtToken(userRecord.id, email, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+        const token = await generateJwtToken(userRecord.id, email, getJwtSecret(env));
 
         return makeAuthResponse({
           ok: true,
@@ -1445,7 +1448,7 @@ export default {
           provider: 'google',
           providerId: googleUser.sub
         });
-        const token = await generateJwtToken(user.id, user.email, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+        const token = await generateJwtToken(user.id, user.email, getJwtSecret(env));
         return makeAuthResponse({
           ok: true,
           token,
@@ -1527,7 +1530,7 @@ export default {
           provider: 'x',
           providerId: handle.toLowerCase()
         });
-        const token = await generateJwtToken(user.id, user.email, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+        const token = await generateJwtToken(user.id, user.email, getJwtSecret(env));
         return makeAuthResponse({
           ok: true,
           token,
@@ -1670,7 +1673,7 @@ export default {
         setInRam(`user_email_${email}`, updatedUser);
         deleteFromRam(`reset_code_${email}`);
 
-        const token = await generateJwtToken(userId, email, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+        const token = await generateJwtToken(userId, email, getJwtSecret(env));
         ctx.waitUntil(sendSecurityEmail(env, updatedUser, 'Contraseña actualizada', 'La contraseña de tu cuenta de Trujillo AI se acaba de cambiar.'));
 
         return makeAuthResponse({
@@ -2036,6 +2039,23 @@ export default {
     }
 
     // ========================================================
+    // 5b. API OpenAI Vision (/v1/chat/completions)
+    // ========================================================
+    const rutaV1 = rutaOpenAI(url.pathname);
+    if (rutaV1 === 'models' && isGetOrHead) {
+      return handleOpenAIModels(corsHeaders);
+    }
+    if (rutaV1 === 'completions' && request.method === 'POST') {
+      return handleOpenAIChatCompletions(request, env, ctx, { callGroqChat, corsHeaders });
+    }
+    if (rutaV1 === 'completions') {
+      return new Response(JSON.stringify({ error: { message: 'Usa POST', type: 'invalid_request_error' } }), {
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', Allow: 'POST' }
+      });
+    }
+
+    // ========================================================
     // 6. STREAMING WEB SSE (/api/chat)
     // ========================================================
     if (request.method === 'POST' && url.pathname === '/api/chat') {
@@ -2326,7 +2346,7 @@ async function handleWebChatStream(request, env, ctx) {
 
     if (authHeader.startsWith('Bearer ')) {
       const token = authHeader.slice(7);
-      authedUser = await verifyJwtToken(token, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+      authedUser = await verifyJwtToken(token, getJwtSecret(env));
     }
 
     const body = await request.json();
@@ -4354,7 +4374,7 @@ async function getAuthedUser(request, env) {
     }
   }
   if (!token) return null;
-  const payload = await verifyJwtToken(token, env.JWT_SECRET || 'trujillo_jwt_secret_2026');
+  const payload = await verifyJwtToken(token, getJwtSecret(env));
   if (!payload?.email && !payload?.sub) return null;
   if (payload.email) {
     const email = String(payload.email).toLowerCase();
@@ -4502,9 +4522,31 @@ async function sendSecurityEmail(env, user, title, bodyText) {
   });
 }
 
+function getJwtSecret(env) {
+  if (env?.JWT_SECRET) return env.JWT_SECRET;
+  console.warn('[SECURITY WARNING] env.JWT_SECRET no configurado en Cloudflare Secrets. Configúralo con: npx wrangler secret put JWT_SECRET');
+  return 'trujillo_jwt_secret_2026';
+}
+
+function base64UrlEncode(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlDecode(str) {
+  let m = String(str || '').replace(/-/g, '+').replace(/_/g, '/');
+  while (m.length % 4) m += '=';
+  const binary = atob(m);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
 async function generateJwtToken(userId, email, secret) {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({
+  const header = base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payload = base64UrlEncode(JSON.stringify({
     sub: userId,
     email,
     iat: Math.floor(Date.now() / 1000),
@@ -4534,7 +4576,7 @@ async function generateJwtToken(userId, email, secret) {
 
 async function verifyJwtToken(token, secret) {
   try {
-    const parts = token.split('.');
+    const parts = String(token || '').split('.');
     if (parts.length !== 3) return null;
 
     const [header, payload, sig] = parts;
@@ -4547,11 +4589,13 @@ async function verifyJwtToken(token, secret) {
       ['verify']
     );
 
-    const binarySig = Uint8Array.from(atob(sig.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    let mSig = sig.replace(/-/g, '+').replace(/_/g, '/');
+    while (mSig.length % 4) mSig += '=';
+    const binarySig = Uint8Array.from(atob(mSig), c => c.charCodeAt(0));
     const valid = await crypto.subtle.verify('HMAC', key, binarySig, enc.encode(`${header}.${payload}`));
     if (!valid) return null;
 
-    const payloadObj = JSON.parse(atob(payload));
+    const payloadObj = JSON.parse(base64UrlDecode(payload));
     if (payloadObj.exp && payloadObj.exp < Math.floor(Date.now() / 1000)) return null;
 
     return payloadObj;

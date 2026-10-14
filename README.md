@@ -8,13 +8,15 @@
 
 Production Gateway: [ai.trujillomingorance.com](https://ai.trujillomingorance.com)
 
+OpenAI-compatible vision API (used by NutriFit): `POST /v1/chat/completions` and `GET /v1/models`. Image input is a `data:` URL. The worker calls Groq with its own key (`qwen` vision ladder) and keeps the caller system prompt. Optional `GATEWAY_API_KEY` (secret) requires `Authorization: Bearer`. Without that secret the route is open, with a daily cap of 400 calls in KV.
+
 An open-source, edge-native web workspace and Discord bot powered by Cloudflare Workers and Groq LPU inference. It provides fast token streaming with modern open models, multimodal image reasoning, voice transcription, persistent conversation memory, and custom role personas.
 
 ---
 
 ## Technical Overview
 
-- Fast LPU Inference: Near-instant token generation using open-weights models such as OpenAI GPT OSS 120B, Qwen 3.6 27B, and OpenAI GPT OSS 20B Turbo.
+- Fast LPU Inference: Near-instant token generation using open-weights models such as OpenAI GPT OSS 120B, Qwen 3.8 27B, and OpenAI GPT OSS 20B Turbo.
 - Multimodal Processing: Support for image analysis, visual reasoning, and edge-powered speech-to-text transcription via Whisper Large v3 Turbo.
 - Dual Access Surface:
   - Web Studio: Responsive single-page application with streaming markdown, syntax highlighting, conversation branching, and 26+ language translations.
@@ -46,7 +48,7 @@ An open-source, edge-native web workspace and Discord bot powered by Cloudflare 
                     ┌──────────────────────┐     ┌──────────────────────┐
                     │    Groq LPU Engine   │     │ Cloudflare Workers KV│
                     │  - GPT-OSS 120B/20B  │     │  - Conversation Turns│
-                    │  - Qwen 3.6 / 3.8    │     │  - Custom Personas   │
+                    │  - Qwen 3.8 Vision   │     │  - Custom Personas   │
                     │  - Whisper Turbo     │     │  - Daily Ops Metrics │
                     └──────────────────────┘     └──────────────────────┘
 ```
@@ -208,7 +210,7 @@ Once invited to your Discord server, the bot supports the `/ia` command with the
 | Option | Type | Description |
 | :--- | :--- | :--- |
 | `pregunta` / `prompt` | String | Query, code request, or analytical prompt. |
-| `modelo` / `model` | Choice | `openai/gpt-oss-120b`, `qwen/qwen3.6-27b`, `openai/gpt-oss-20b`. |
+| `modelo` / `model` | Choice | `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`. |
 | `longitud` / `length` | Choice | `corto` (concise summary), `normal`, `extendido` (deep dive). |
 | `archivo` / `file` | Attachment | Image attachment for visual analysis or document inspection. |
 | `buscar_web` | Boolean | Enables web retrieval for live context. |

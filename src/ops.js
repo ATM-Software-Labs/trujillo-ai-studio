@@ -11,10 +11,10 @@ const OPS_TTL = 14 * 24 * 3600
 const IDEA_MAX = 4000
 const IDEA_MIN = 8
 const VISION_MODELS = [
-  'qwen/qwen3.6-27b',
-  'qwen/qwen3.8-27b'
+  'qwen/qwen3.8-27b',
+  'llama-3.2-11b-vision-preview'
 ]
-const FAST_TEXT_MODEL = 'openai/gpt-oss-20b'
+const FAST_TEXT_MODEL = 'llama-3.1-8b-instant'
 const WHISPER_MODEL = 'whisper-large-v3-turbo'
 
 export { OWNER_INBOX, OWNER_INBOXES, VISION_MODELS, FAST_TEXT_MODEL, WHISPER_MODEL }
@@ -74,16 +74,25 @@ export async function bumpOps(env, field, n = 1) {
 
 export function normalizeModel(model) {
   if (!model) return 'openai/gpt-oss-120b';
-  return String(model).trim();
+  const m = String(model).trim();
+  if (m === 'qwen/qwen3.6-27b' || m === 'qwen/qwen3.6') return 'qwen/qwen3.8-27b';
+  if (m === 'trujillo-core' || m === 'default' || m === 'groq-compound') return 'openai/gpt-oss-120b';
+  if (m === 'gpt-4o' || m === 'gpt-4o-mini' || m === 'gpt-4-vision-preview') return 'qwen/qwen3.8-27b';
+  return m;
 }
 
-
 export function groqLadder(requested, { vision = false, skipFallback = false } = {}) {
-  if (vision) return VISION_MODELS.slice()
-  const req = normalizeModel(requested)
-  if (skipFallback) return [req]
-  const mid = req === 'openai/gpt-oss-20b' ? 'openai/gpt-oss-120b' : 'openai/gpt-oss-20b'
-  return [req, mid, FAST_TEXT_MODEL].filter((m, i, arr) => m && arr.indexOf(m) === i)
+  if (vision) return VISION_MODELS.slice();
+  const req = normalizeModel(requested);
+  if (skipFallback) return [req];
+  const list = [
+    req,
+    req !== 'openai/gpt-oss-120b' ? 'openai/gpt-oss-120b' : null,
+    'llama-3.3-70b-versatile',
+    'llama-3.1-8b-instant',
+    'openai/gpt-oss-20b'
+  ].filter(Boolean);
+  return list.filter((m, i, arr) => arr.indexOf(m) === i);
 }
 
 export function shouldRetryGroq(status) {

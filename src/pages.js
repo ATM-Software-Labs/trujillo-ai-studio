@@ -81,7 +81,7 @@ export function getFeaturesHtml() {
 export function getModelsHtml() {
   return renderMarketingPage({
     title: 'Modelos',
-    description: 'Modelos disponibles en Trujillo AI: OpenAI GPT OSS 120B, Qwen 3.6 27B, GPT OSS 20B Turbo y Groq Compound. Contexto de 131.072 tokens.',
+    description: 'Modelos disponibles en Trujillo AI: OpenAI GPT OSS 120B, Qwen 3.8 27B, GPT OSS 20B Turbo y Groq Compound. Contexto de 131.072 tokens.',
     path: '/models',
     active: 'models',
     jsonExtra: [{
@@ -89,7 +89,7 @@ export function getModelsHtml() {
       name: 'Modelos de Trujillo AI',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'OpenAI GPT OSS 120B' },
-        { '@type': 'ListItem', position: 2, name: 'Qwen 3.6 27B' },
+        { '@type': 'ListItem', position: 2, name: 'Qwen 3.8 27B' },
         { '@type': 'ListItem', position: 3, name: 'OpenAI GPT OSS 20B Turbo' },
         { '@type': 'ListItem', position: 4, name: 'Groq Compound' }
       ]
@@ -106,8 +106,8 @@ export function getModelsHtml() {
           <p>Modelo por defecto. Máxima capacidad para arquitectura, código y análisis largo. Contexto 131.072.</p>
         </article>
         <article class="card">
-          <h3>Qwen 3.6 27B</h3>
-          <p>Razonamiento lógico denso. Útil para matemáticas, criptografía y cadenas de deducción.</p>
+          <h3>Qwen 3.8 27B</h3>
+          <p>Razonamiento lógico denso y visión multimodal de alta precisión. Útil para matemáticas, OCR y cadenas de deducción.</p>
         </article>
         <article class="card">
           <h3>OpenAI GPT OSS 20B Turbo</h3>
