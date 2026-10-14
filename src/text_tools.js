@@ -175,10 +175,12 @@ export async function handleTextToolsRequest(request, env, ctx, corsHeaders) {
     const modelsToTry = [
       model,
       'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant'
+      'openai/gpt-oss-120b',
+      'llama-3.1-8b-instant',
+      'openai/gpt-oss-20b'
     ].filter(Boolean);
 
-    let lastError = null;
+    const attemptErrors = [];
     let resultJson = null;
     let usedModel = '';
 
@@ -195,6 +197,11 @@ export async function handleTextToolsRequest(request, env, ctx, corsHeaders) {
           max_tokens: 3000
         };
 
+        if (modelCandidate.includes('gpt-oss')) {
+          payload.reasoning_format = 'hidden';
+          payload.reasoning_effort = 'low';
+        }
+
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -206,7 +213,7 @@ export async function handleTextToolsRequest(request, env, ctx, corsHeaders) {
 
         if (!groqRes.ok) {
           const errText = await groqRes.text().catch(() => '');
-          lastError = new Error(`Groq HTTP ${groqRes.status}: ${errText}`);
+          attemptErrors.push(`[${modelCandidate}] HTTP ${groqRes.status}: ${errText}`);
           continue;
         }
 
@@ -216,12 +223,12 @@ export async function handleTextToolsRequest(request, env, ctx, corsHeaders) {
         usedModel = modelCandidate;
         break;
       } catch (err) {
-        lastError = err;
+        attemptErrors.push(`[${modelCandidate}] Error: ${err.message}`);
       }
     }
 
     if (!resultJson) {
-      throw lastError || new Error('No se pudo procesar la solicitud con ninguno de los modelos.');
+      throw new Error(`Falló en todos los modelos: ${attemptErrors.join(' | ')}`);
     }
 
     return new Response(JSON.stringify({
