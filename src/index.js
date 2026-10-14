@@ -44,6 +44,7 @@ import {
   VISION_MODELS
 } from './ops.js';
 import { handleOpenAIChatCompletions, handleOpenAIModels, rutaOpenAI } from './openai_gateway.js';
+import { handleTextToolsRequest } from './text_tools.js';
 import {
   applyEnrichment,
   applyTurn,
@@ -2060,6 +2061,22 @@ export default {
     // ========================================================
     if (request.method === 'POST' && url.pathname === '/api/chat') {
       return handleWebChatStream(request, env, ctx);
+    }
+
+    // ========================================================
+    // 6.1. MOTORES DE ANÁLISIS Y OPTIMIZACIÓN DE TEXTO (/api/tools)
+    // ========================================================
+    if (url.pathname === '/api/tools' || url.pathname === '/api/tools/execute') {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { headers: corsHeaders });
+      }
+      if (request.method === 'POST') {
+        return handleTextToolsRequest(request, env, ctx, corsHeaders);
+      }
+      return new Response(JSON.stringify({ error: 'Método no permitido. Usa POST.' }), {
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', Allow: 'POST, OPTIONS' }
+      });
     }
 
     // ========================================================
