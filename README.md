@@ -27,13 +27,21 @@
 
 ## Capturas
 
-| Escritorio · Chat Workspace | Escritorio · Cuatro Motores (Modelos) | Escritorio · Capacidades |
-|:-:|:-:|:-:|
-| <img src="docs/screenshots/desktop-chat.png" width="300" alt="Workspace principal de chat con selector de modelo y barra lateral" /> | <img src="docs/screenshots/desktop-models.png" width="300" alt="Selector y catálogo de motores Groq LPU" /> | <img src="docs/screenshots/desktop-features.png" width="300" alt="Vista de funcionalidades y producto" /> |
+### Escritorio
 
-| Inicio de Sesión & OAuth | Documentación Integrada | Móvil · Chat | Móvil · Modelos |
+| Chat Workspace | Cuatro Motores LPU (Modelos) |
+|:-:|:-:|
+| <img src="docs/screenshots/desktop-chat.png" width="100%" alt="Workspace principal de chat con selector de modelo y barra lateral" /> | <img src="docs/screenshots/desktop-models.png" width="100%" alt="Selector y catálogo de motores Groq LPU" /> |
+| **Capacidades del Producto** | **Inicio de Sesión & OAuth** |
+| <img src="docs/screenshots/desktop-features.png" width="100%" alt="Vista de funcionalidades y producto" /> | <img src="docs/screenshots/desktop-login.png" width="100%" alt="Acceso con Google, X y correo" /> |
+
+### Móvil
+
+| Chat | Modelos | Capacidades | Acceso |
 |:-:|:-:|:-:|:-:|
-| <img src="docs/screenshots/desktop-login.png" width="200" alt="Acceso con Google, X y correo" /> | <img src="docs/screenshots/desktop-docs.png" width="200" alt="Documentación técnica y guías" /> | <img src="docs/screenshots/mobile-chat.png" width="200" alt="Chat en vista móvil" /> | <img src="docs/screenshots/mobile-models.png" width="200" alt="Modelos en vista móvil" /> |
+| <img src="docs/screenshots/mobile-chat.png" width="200" alt="Chat en vista móvil" /> | <img src="docs/screenshots/mobile-models.png" width="200" alt="Modelos en vista móvil" /> | <img src="docs/screenshots/mobile-features.png" width="200" alt="Funcionalidades en móvil" /> | <img src="docs/screenshots/mobile-login.png" width="200" alt="Inicio de sesión en móvil" /> |
+| **Documentación** | **Acerca de** | **Términos** | **Privacidad** |
+| <img src="docs/screenshots/mobile-docs.png" width="200" alt="Documentación en móvil" /> | <img src="docs/screenshots/mobile-about.png" width="200" alt="Acerca de en móvil" /> | <img src="docs/screenshots/mobile-terms.png" width="200" alt="Términos de servicio" /> | <img src="docs/screenshots/mobile-privacy.png" width="200" alt="Política de privacidad" /> |
 
 ---
 

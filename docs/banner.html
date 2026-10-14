@@ -5,140 +5,218 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    width: 1200px;
-    height: 420px;
+    width: 1600px;
+    height: 800px;
     background: #080c14;
     color: #f8fafc;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
     align-items: center;
     position: relative;
     overflow: hidden;
   }
-  .glow-1 {
+  .bg-glow-1 {
     position: absolute;
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 70%);
-    top: -150px;
-    left: 20%;
-    filter: blur(40px);
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.16) 0%, rgba(14, 165, 233, 0) 70%);
+    top: -100px;
+    left: -100px;
+    filter: blur(60px);
   }
-  .glow-2 {
+  .bg-glow-2 {
     position: absolute;
-    width: 450px;
-    height: 450px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 70%);
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.14) 0%, rgba(99, 102, 241, 0) 70%);
     bottom: -150px;
-    right: 20%;
-    filter: blur(40px);
+    right: 100px;
+    filter: blur(80px);
   }
   .grid-pattern {
     position: absolute;
     inset: 0;
-    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse at 60% 50%, black 50%, transparent 85%);
   }
-  .content {
+  .container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 90px;
     position: relative;
     z-index: 10;
-    text-align: center;
+  }
+  .left-col {
+    flex: 0 0 620px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    justify-content: center;
   }
-  .logo-box {
+  .logo-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin-bottom: 30px;
   }
   .logo-img {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
+    width: 60px;
+    height: 60px;
+    border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 30px rgba(14, 165, 233, 0.35);
+    box-shadow: 0 0 35px rgba(14, 165, 233, 0.4);
   }
-  .brand-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 100px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #38bdf8;
-  }
-  .brand-badge .dot {
-    width: 6px;
-    height: 6px;
-    background: #22c55e;
-    border-radius: 50%;
-    box-shadow: 0 0 8px #22c55e;
+  .brand-title {
+    font-size: 38px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #ffffff;
   }
   h1 {
-    font-size: 48px;
+    font-size: 56px;
     font-weight: 800;
+    line-height: 1.15;
     letter-spacing: -0.03em;
-    background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+    color: #ffffff;
+    margin-bottom: 22px;
+  }
+  h1 span.highlight {
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 12px;
   }
-  p.subtitle {
-    font-size: 18px;
+  p.desc {
+    font-size: 20px;
+    line-height: 1.55;
     color: #94a3b8;
-    max-width: 780px;
-    line-height: 1.5;
-    margin-bottom: 26px;
+    margin-bottom: 36px;
+    max-width: 560px;
   }
   .pills {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
-    justify-content: center;
   }
   .pill {
-    padding: 7px 16px;
-    background: rgba(15, 23, 42, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    font-size: 12.5px;
+    padding: 9px 20px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
     color: #cbd5e1;
-    font-weight: 500;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   }
-  .pill strong {
-    color: #f1f5f9;
+  .right-col {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1200px;
+  }
+  .mockup-group {
+    position: relative;
+    width: 780px;
+    height: 640px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .phone-frame {
+    position: absolute;
+    width: 270px;
+    height: 585px;
+    border-radius: 40px;
+    background: #0b0f19;
+    border: 6px solid #1e293b;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 40px rgba(14, 165, 233, 0.15);
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  .phone-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .phone-left {
+    transform: translateX(-190px) rotate(-7deg) scale(0.92);
+    z-index: 2;
+    opacity: 0.92;
+  }
+  .phone-center {
+    transform: translateX(0) rotate(0deg) scale(1.04);
+    z-index: 5;
+    border-color: #334155;
+    box-shadow: 0 35px 80px -20px rgba(0, 0, 0, 0.95), 0 0 50px rgba(14, 165, 233, 0.3);
+  }
+  .phone-right {
+    transform: translateX(190px) rotate(7deg) scale(0.92);
+    z-index: 3;
+    opacity: 0.92;
+  }
+  .desktop-backdrop {
+    position: absolute;
+    width: 720px;
+    height: 450px;
+    border-radius: 20px;
+    background: #0f172a;
+    border: 4px solid #1e293b;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    transform: translateY(-40px) scale(0.95);
+    opacity: 0.35;
+    z-index: 1;
+    filter: blur(1px);
+  }
+  .desktop-backdrop img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 </style>
 </head>
 <body>
-<div class="glow-1"></div>
-<div class="glow-2"></div>
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
 <div class="grid-pattern"></div>
-<div class="content">
-  <div class="logo-box">
-    <img src="../public/avatar.png" class="logo-img" alt="Trujillo AI Logo">
-    <div class="brand-badge"><span class="dot"></span> Edge-Native Architecture</div>
+<div class="container">
+  <div class="left-col">
+    <div class="logo-row">
+      <img src="../public/avatar.png" class="logo-img" alt="Trujillo AI Logo">
+      <span class="brand-title">Trujillo AI</span>
+    </div>
+    <h1>Tu inteligencia,<br><span class="highlight">en el perímetro.</span></h1>
+    <p class="desc">Workspace empresarial y bot de Discord con inferencia Groq LPU (~500 tps), visión multimodal, memoria semántica en KV y gateway compatible con OpenAI.</p>
+    <div class="pills">
+      <div class="pill">⚡ Groq LPU</div>
+      <div class="pill">🧠 GPT-OSS 120B</div>
+      <div class="pill">👁️ Qwen 3.8 Vision</div>
+      <div class="pill">☁️ Cloudflare</div>
+      <div class="pill">🛡️ MIT</div>
+    </div>
   </div>
-  <h1>Trujillo AI Studio & Bot</h1>
-  <p class="subtitle">Workspace de Inteligencia Empresarial & Inferencia Groq LPU en el Perímetro de Cloudflare. Razonamiento Multimodal, Memoria Persistente y Gateway Compatible con OpenAI.</p>
-  <div class="pills">
-    <div class="pill">⚡ <strong>Groq LPU</strong> ~500 tps</div>
-    <div class="pill">🧠 <strong>GPT-OSS 120B / Qwen 3.8</strong></div>
-    <div class="pill">👁️ <strong>OpenAI Vision API Gateway</strong></div>
-    <div class="pill">🌐 <strong>Edge Memory & KV</strong></div>
-    <div class="pill">🛡️ <strong>Zero-Trust & Anti-Bot</strong></div>
+  <div class="right-col">
+    <div class="mockup-group">
+      <div class="desktop-backdrop">
+        <img src="screenshots/desktop-chat.png" alt="Desktop Workspace">
+      </div>
+      <div class="phone-frame phone-left">
+        <img src="screenshots/mobile-features.png" alt="Trujillo AI Features">
+      </div>
+      <div class="phone-frame phone-center">
+        <img src="screenshots/mobile-chat.png" alt="Trujillo AI Chat">
+      </div>
+      <div class="phone-frame phone-right">
+        <img src="screenshots/mobile-models.png" alt="Trujillo AI Models">
+      </div>
+    </div>
   </div>
 </div>
 </body>
