@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 420px;
+    background: #080c14;
+    color: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .glow-1 {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(14, 165, 233, 0) 70%);
+    top: -150px;
+    left: 20%;
+    filter: blur(40px);
+  }
+  .glow-2 {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 70%);
+    bottom: -150px;
+    right: 20%;
+    filter: blur(40px);
+  }
+  .grid-pattern {
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
+  }
+  .content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .logo-box {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .logo-img {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.35);
+  }
+  .brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #38bdf8;
+  }
+  .brand-badge .dot {
+    width: 6px;
+    height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #22c55e;
+  }
+  h1 {
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 12px;
+  }
+  p.subtitle {
+    font-size: 18px;
+    color: #94a3b8;
+    max-width: 780px;
+    line-height: 1.5;
+    margin-bottom: 26px;
+  }
+  .pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .pill {
+    padding: 7px 16px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #cbd5e1;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+  }
+  .pill strong {
+    color: #f1f5f9;
+  }
+</style>
+</head>
+<body>
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<div class="grid-pattern"></div>
+<div class="content">
+  <div class="logo-box">
+    <img src="../public/avatar.png" class="logo-img" alt="Trujillo AI Logo">
+    <div class="brand-badge"><span class="dot"></span> Edge-Native Architecture</div>
+  </div>
+  <h1>Trujillo AI Studio & Bot</h1>
+  <p class="subtitle">Workspace de Inteligencia Empresarial & Inferencia Groq LPU en el Perímetro de Cloudflare. Razonamiento Multimodal, Memoria Persistente y Gateway Compatible con OpenAI.</p>
+  <div class="pills">
+    <div class="pill">⚡ <strong>Groq LPU</strong> ~500 tps</div>
+    <div class="pill">🧠 <strong>GPT-OSS 120B / Qwen 3.8</strong></div>
+    <div class="pill">👁️ <strong>OpenAI Vision API Gateway</strong></div>
+    <div class="pill">🌐 <strong>Edge Memory & KV</strong></div>
+    <div class="pill">🛡️ <strong>Zero-Trust & Anti-Bot</strong></div>
+  </div>
+</div>
+</body>
+</html>

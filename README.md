@@ -1,243 +1,146 @@
-# Trujillo AI Studio and Groq Discord Bot
+<p align="center">
+  <img src="docs/banner.png" alt="Trujillo AI Studio — Workspace de Inteligencia Empresarial en el Perímetro" width="100%" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Runtime](https://img.shields.io/badge/Runtime-Cloudflare%20Workers-f38020?style=flat-square&logo=cloudflare)](https://workers.cloudflare.com)
-[![Inference Engine](https://img.shields.io/badge/Inference-Groq%20LPU-f55036?style=flat-square)](https://groq.com)
-[![Discord API](https://img.shields.io/badge/Discord-Interactions%20API-5865F2?style=flat-square&logo=discord)](https://discord.com/developers/docs)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+<p align="center">
+  <strong>Workspace de inteligencia empresarial en el perímetro y bot de Discord ultrarrápido con Groq LPU. Minimalista, open source y sin límites.</strong><br/>
+  <em>Minimalist, open-source enterprise intelligence workspace &amp; edge Discord bot powered by Cloudflare Workers and Groq LPU inference.</em>
+</p>
 
-Production Gateway: [ai.trujillomingorance.com](https://ai.trujillomingorance.com)
+<p align="center">
+  <a href="https://ai.trujillomingorance.com"><b>ai.trujillomingorance.com</b></a> ·
+  <a href="https://ai.trujillomingorance.com/models">Modelos</a> ·
+  <a href="https://ai.trujillomingorance.com/docs">Documentación</a> ·
+  <a href="https://github.com/ATM-Software-Labs/trujillo-ai-studio/releases">Releases</a> ·
+  <a href="LICENSE">Licencia MIT</a>
+</p>
 
-OpenAI-compatible vision API (used by NutriFit): `POST /v1/chat/completions` and `GET /v1/models`. Image input is a `data:` URL. The worker calls Groq with its own key (`qwen` vision ladder) and keeps the caller system prompt. Optional `GATEWAY_API_KEY` (secret) requires `Authorization: Bearer`. Without that secret the route is open, with a daily cap of 400 calls in KV.
-
-An open-source, edge-native web workspace and Discord bot powered by Cloudflare Workers and Groq LPU inference. It provides fast token streaming with modern open models, multimodal image reasoning, voice transcription, persistent conversation memory, and custom role personas.
-
----
-
-## Technical Overview
-
-- Fast LPU Inference: Near-instant token generation using open-weights models such as OpenAI GPT OSS 120B, Qwen 3.8 27B, and OpenAI GPT OSS 20B Turbo.
-- Multimodal Processing: Support for image analysis, visual reasoning, and edge-powered speech-to-text transcription via Whisper Large v3 Turbo.
-- Dual Access Surface:
-  - Web Studio: Responsive single-page application with streaming markdown, syntax highlighting, conversation branching, and 26+ language translations.
-  - Discord Bot: Edge webhook endpoint verifying incoming interactions using Ed25519 cryptography, featuring the `/ia` slash command and interactive modals.
-- Persistent Edge State: Session state, customized system personas, and daily token usage tracked through Cloudflare Workers KV (`BOT_MEMORY`).
-- Bring Your Own Key (BYOK): Users can save their personal Groq API key in their browser (stored locally in `localStorage`), enabling unlimited tokens without server-side credential persistence.
-- Dark Slate Visual Design: Obsidian navy palette (#080c14) with translucent acrylic surfaces and accessible typography.
+<p align="center">
+  <img alt="Licencia MIT" src="https://img.shields.io/badge/licencia-MIT-10B981" />
+  <img alt="Cloudflare Workers" src="https://img.shields.io/badge/Cloudflare-Workers%20%2B%20KV-F38020?logo=cloudflare&logoColor=white" />
+  <img alt="Groq LPU" src="https://img.shields.io/badge/Inferencia-Groq%20LPU-f55036" />
+  <img alt="Discord Bot" src="https://img.shields.io/badge/Discord-Interactions%20API-5865F2?logo=discord&logoColor=white" />
+  <img alt="OpenAI Gateway" src="https://img.shields.io/badge/API-OpenAI%20Compatible-0ea5e9" />
+</p>
 
 ---
 
-## System Architecture
+## Capturas
 
-```
-                               ┌────────────────────────────────┐
-                               │       Client Requests          │
-                               │  (Web Browser / Discord Bot)   │
-                               └───────────────┬────────────────┘
-                                               │
-                                               ▼
-                      ┌──────────────────────────────────────────────────┐
-                      │        Cloudflare Worker (Global Edge)           │
-                      │  - Ed25519 Cryptographic Verification (Discord)  │
-                      │  - JWT Authentication & OAuth (Google / X)       │
-                      │  - SPA Static Asset Delivery (Assets Binding)    │
-                      │  - Quota Limiter & Daily Token Management        │
-                      └─────────┬────────────────────────────┬───────────┘
-                                │                            │
-                                ▼                            ▼
-                    ┌──────────────────────┐     ┌──────────────────────┐
-                    │    Groq LPU Engine   │     │ Cloudflare Workers KV│
-                    │  - GPT-OSS 120B/20B  │     │  - Conversation Turns│
-                    │  - Qwen 3.8 Vision   │     │  - Custom Personas   │
-                    │  - Whisper Turbo     │     │  - Daily Ops Metrics │
-                    └──────────────────────┘     └──────────────────────┘
-```
+| Escritorio · Chat Workspace | Escritorio · Cuatro Motores (Modelos) | Escritorio · Capacidades |
+|:-:|:-:|:-:|
+| <img src="docs/screenshots/desktop-chat.png" width="300" alt="Workspace principal de chat con selector de modelo y barra lateral" /> | <img src="docs/screenshots/desktop-models.png" width="300" alt="Selector y catálogo de motores Groq LPU" /> | <img src="docs/screenshots/desktop-features.png" width="300" alt="Vista de funcionalidades y producto" /> |
+
+| Inicio de Sesión & OAuth | Documentación Integrada | Móvil · Chat | Móvil · Modelos |
+|:-:|:-:|:-:|:-:|
+| <img src="docs/screenshots/desktop-login.png" width="200" alt="Acceso con Google, X y correo" /> | <img src="docs/screenshots/desktop-docs.png" width="200" alt="Documentación técnica y guías" /> | <img src="docs/screenshots/mobile-chat.png" width="200" alt="Chat en vista móvil" /> | <img src="docs/screenshots/mobile-models.png" width="200" alt="Modelos en vista móvil" /> |
 
 ---
 
-## Enterprise Branching Model
+## Funciones
 
-| Branch | Purpose | Deployment Trigger |
-| :--- | :--- | :--- |
-| `main` | Production Release | Production deployment on Cloudflare Edge |
-| `develop` | Staging & Integration | Feature testing, model evaluations, and active development |
-| `feature/*` | Feature development | Target pull requests merged into `develop` |
-
----
-
-## Repository Structure
-
-```
-trujillo-ai-studio/
-├── public/                  # Static SPA assets, CSS, JS, and i18n translation catalogs
-│   ├── assets/              # App bundle and localized language packs (26+ languages)
-│   └── _headers             # Security policies and edge cache headers
-├── src/                     # Cloudflare Worker edge backend
-│   ├── memory/              # Conversation turns, KV resolution, user personas, and schema
-│   ├── index.js             # Main worker entry point and API route dispatcher
-│   ├── html_shell.js        # Responsive SSR shell and corporate dark layout
-│   ├── ops.js               # Analytics, Groq fallback ladder, and telemetry
-│   ├── seo.js               # Metadata, sitemap.xml, robots.txt, and llms.txt generator
-│   └── time.js              # Real-time system context and timezone resolution
-├── scripts/                 # Translation builders and memory testing utilities
-├── docs/                    # Architecture runbooks and zero-cost email setup guides
-├── web/                     # React / Vite alternate frontend client
-├── register.js              # Discord slash command registration script
-├── wrangler.toml.example    # Configuration template for self-hosting
-├── wrangler.toml            # Edge deployment configuration
-└── LICENSE                  # MIT License
-```
+- **Inferencia en Groq LPU (~500 tokens/segundo):** Streaming ultrarrápido sin colas ni esperas, aprovechando hardware LPU con latencia sub-segundo en respuestas completas.
+- **Catálogo de Modelos & Fallback Automático:**
+  - `openai/gpt-oss-120b`: Motor insignia de 120B para arquitectura de software, razonamiento profundo y generación de código complejo.
+  - `qwen/qwen3.8-27b`: Razonamiento lógico denso y visión multimodal de alta precisión (OCR, diagramas, platos de comida y análisis de documentos).
+  - `openai/gpt-oss-20b`: Modelo compacto MoE optimizado para respuestas cortas y latencia mínima.
+  - `llama-3.3-70b-versatile` y `llama-3.1-8b-instant`: Escalera de respaldo ante picos de demanda o límites de ratio.
+- **Gateway Compatible con OpenAI (`/v1/chat/completions` y `/v1/models`):** Ingesta de visión para aplicaciones externas como [NutriFit](https://github.com/ATM-Software-Labs/nutrifit). Permite consumir inferencia de visión pasando imágenes en Data URL, conservando los prompts del sistema del cliente y limitando el cupo diario en KV con clave secreta opcional `GATEWAY_API_KEY`.
+- **Bot de Discord Edge-Native:** Procesamiento de interacciones en el perímetro mediante webhooks HTTP sin procesos WebSocket de fondo. Verificación criptográfica Ed25519, comando slash `/ia` (o `/ai`), selección interactiva de longitud de respuesta, adjuntos y modelos.
+- **Memoria Semántica & Perfil Adaptativo:** Extracción automática y asíncrona de notas de contexto del usuario (stack preferido como React/Python, nivel de experiencia, tono y huso horario) almacenadas en Cloudflare Workers KV (`BOT_MEMORY`).
+- **Análisis Multimodal de Imagen:** Downscaling optimizado en cliente a 768px y *Context Pruning* automático para evitar sobrecostes de tokens en peticiones con imágenes adjuntas.
+- **Transcripción de Voz Instantánea:** Entrada de audio por micrófono o subida de archivo analizada en milisegundos mediante `whisper-large-v3-turbo` en `/api/transcribe`.
+- **Búsqueda Web en Tiempo Real:** Enriquecimiento de consultas técnicas con resultados y enlaces en vivo integrados en el flujo de streaming.
+- **Generación Visual (Flux 1.1 Ultra):** Creación de imágenes fotorrealistas con optimización de prompt en lenguaje natural asistida por Groq.
+- **Bring Your Own Key (BYOK):** Los usuarios pueden introducir su propia clave de Groq en el navegador (almacenada únicamente en su `localStorage`), obteniendo cuota ilimitada sin persistir credenciales en el servidor.
+- **Zero-Trust & Seguridad:** Firmado de tokens JWT con HMAC-SHA256 seguro frente a Unicode, autenticación OAuth 2.0 (Google y X/Twitter), protección perimetral contra scrapers maliciosos y cabeceras estrictas (`CSP`, `Referrer-Policy`, `X-Content-Type-Options`).
+- **Internacionalización en 26 Idiomas:** Detección automática por IP y geolocalización edge (`cf.country`), con URLs localizadas dedicadas, etiquetas `hreflang` recíprocas y sitemap XML compatible al 100% con Google Search Console.
 
 ---
 
-## Self-Hosting Guide (Deploy to Your Own Infrastructure)
+## Stack Tecnológico
 
-Follow these steps to deploy your own instance of the AI Studio and Discord bot to your Cloudflare account.
-
-### Prerequisites
-
-1. Node.js (v20 or higher) and npm.
-2. Cloudflare Account with the `wrangler` CLI installed.
-3. Groq Cloud API Key (from console.groq.com).
-4. Discord Developer Application (optional, needed only if using the Discord bot).
+| Capa | Tecnología |
+|---|---|
+| **Runtime & Edge** | **Cloudflare Workers** (ES Modules, ejecución global en 300+ ciudades) |
+| **Motor de Inferencia** | **Groq Cloud LPU** (GPT-OSS 120B, Qwen 3.8 27B Vision, Llama 3.3 70B, Whisper Large v3 Turbo) |
+| **Base de Datos & Estado** | **Cloudflare Workers KV** (`BOT_MEMORY`) con caché L1 en RAM perimetral |
+| **Frontend Web** | Single-Page Application responsiva, temas Obsidian Dark/Navy, streaming SSE, Marked |
+| **Bot de Discord** | Discord Interactions API con verificación criptográfica Ed25519 |
+| **Gateway de IA** | Endpoints `/v1/chat/completions` y `/v1/models` compatibles con SDKs de OpenAI |
+| **Autenticación** | JWT HMAC-SHA256, Google OAuth, X (Twitter) OAuth 2.0 PKCE |
+| **SEO & Datos Estructurados** | Schema.org (`SoftwareApplication`, `BreadcrumbList`, `Organization`), Hreflang multilingüe |
 
 ---
 
-### Step 1: Clone the Repository and Install Dependencies
+## Configuración y Despliegue
+
+### Requisitos Previos
+
+- [Node.js](https://nodejs.org/) v20 o superior
+- Cuenta en [Cloudflare](https://cloudflare.com/) con Workers y KV habilitados
+- Clave de API en [GroqCloud](https://console.groq.com/)
+
+### Instalación Local
 
 ```bash
-git clone https://github.com/your-github-username/trujillo-ai-studio.git
+# 1. Clonar el repositorio
+git clone https://github.com/ATM-Software-Labs/trujillo-ai-studio.git
 cd trujillo-ai-studio
 
-# Install dependencies
+# 2. Instalar dependencias
 npm install
+
+# 3. Compilar los assets del cliente web
+npm run build:web
+
+# 4. Ejecutar tests unitarios
+npm test
 ```
 
----
+### Configuración de Secretos en Cloudflare
 
-### Step 2: Authenticate Wrangler with Cloudflare
-
-```bash
-npx wrangler login
-```
-
----
-
-### Step 3: Create a Cloudflare Workers KV Namespace
+Inyecta los secretos requeridos en Cloudflare Workers mediante Wrangler:
 
 ```bash
-npx wrangler kv:namespace create BOT_MEMORY
-```
-
-Note the generated namespace ID in the terminal output (e.g., `id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"`).
-
----
-
-### Step 4: Configure wrangler.toml
-
-Copy the template configuration:
-```bash
-cp wrangler.toml.example wrangler.toml
-```
-
-Open `wrangler.toml` and update:
-1. `id`: Paste the KV namespace ID from Step 3 into the `[[kv_namespaces]]` section.
-2. `SITE_DOMAIN`: Set your custom domain or leave it as your `workers.dev` subdomain.
-3. `OWNER_EMAILS`: Your administrator email address for unlimited token access.
-
----
-
-### Step 5: Configure Environment Secrets
-
-Inject the required secrets securely into Cloudflare Workers:
-
-```bash
-# 1. Groq Cloud API Key (Required for AI completions and vision)
+# Motor principal de inferencia Groq
 npx wrangler secret put GROQ_API_KEY
 
-# 2. JWT Secret (Generate a secure 32-character random string)
+# Clave de firma para sesiones JWT
 npx wrangler secret put JWT_SECRET
 
-# --- OPTIONAL: Discord Bot Integration ---
-# 3. Discord Application Public Key (from Discord Developer Portal)
+# (Opcional) Clave de acceso al Gateway compatible con OpenAI
+npx wrangler secret put GATEWAY_API_KEY
+
+# (Opcional) Credenciales de Bot de Discord
 npx wrangler secret put DISCORD_PUBLIC_KEY
-
-# 4. Discord Bot Token (from Discord Developer Portal -> Bot tab)
 npx wrangler secret put DISCORD_BOT_TOKEN
-
-# --- OPTIONAL: Transactional Emails (Brevo) ---
-npx wrangler secret put BREVO_API_KEY
 ```
 
----
-
-### Step 6: (Optional) Register Discord Slash Commands
-
-If you configured a Discord bot, register the `/ia` command:
-```bash
-# Usage: node register.js <DISCORD_BOT_TOKEN> <DISCORD_APPLICATION_ID>
-node register.js YOUR_BOT_TOKEN YOUR_APPLICATION_ID
-```
-
-In the Discord Developer Portal under your application, configure:
-- Interactions Endpoint URL: `https://<YOUR_WORKER_URL>/discord` (or `https://your-domain.com/discord`).
-
----
-
-### Step 7: Local Development
+### Desarrollo y Despliegue a Producción
 
 ```bash
+# Iniciar entorno de desarrollo local
 npm run dev
-```
 
-Open `http://localhost:8787` in your browser.
-
----
-
-### Step 8: Production Deployment
-
-Deploy the entire studio (SPA assets and edge worker) to Cloudflare:
-```bash
+# Desplegar en producción en Cloudflare Workers
 npm run deploy
 ```
 
 ---
 
-## Discord Slash Commands
+## Opciones del Comando de Discord (`/ia`)
 
-Once invited to your Discord server, the bot supports the `/ia` command with the following options:
-
-| Option | Type | Description |
+| Opción | Tipo | Descripción |
 | :--- | :--- | :--- |
-| `pregunta` / `prompt` | String | Query, code request, or analytical prompt. |
-| `modelo` / `model` | Choice | `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`. |
-| `longitud` / `length` | Choice | `corto` (concise summary), `normal`, `extendido` (deep dive). |
-| `archivo` / `file` | Attachment | Image attachment for visual analysis or document inspection. |
-| `buscar_web` | Boolean | Enables web retrieval for live context. |
+| `pregunta` / `prompt` | Texto | Consulta analítica, solicitud de código o tarea de redacción. |
+| `modelo` / `model` | Elección | `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`. |
+| `longitud` / `length` | Elección | `corto` (resumen conciso), `normal`, `extendido` (análisis exhaustivo). |
+| `archivo` / `file` | Adjunto | Imagen para análisis visual, OCR o inspección técnica. |
+| `buscar_web` | Booleano | Activa la recuperación de información viva de la web. |
 
 ---
 
-## Security Principles
+## Licencia
 
-- Zero Hardcoded Secrets: All credentials are dynamically bound at runtime through Cloudflare Secrets.
-- Client-Side BYOK Encryption: User-provided Groq API keys are stored only in client `localStorage` and sent over encrypted TLS 1.3 to Groq.
-- Cryptographic Signature Validation: Incoming Discord requests are validated with Ed25519 signatures before processing.
-- Rate Limiting: Daily token quotas protect backend resources against unexpected spikes in traffic.
-
----
-
-## Contributing
-
-Contributions and pull requests are welcome. Feel free to open an issue on the GitHub repository to discuss improvements.
-
-1. Fork the repository (`git checkout -b feature/improvement`)
-2. Commit your changes (`git commit -m 'feat: description of change'`)
-3. Push to your branch (`git push origin feature/improvement`)
-4. Open a Pull Request against `develop`
-
----
-
-## License
-
-Distributed under the MIT License. See [LICENSE](./LICENSE) for full terms.
-
+Distribuido bajo la [Licencia MIT](LICENSE). Código libre y soberano.
