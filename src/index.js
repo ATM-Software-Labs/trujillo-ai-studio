@@ -268,6 +268,25 @@ export default {
     const url = new URL(request.url);
     const originalPath = url.pathname;
 
+    // /favicon.ico used to be served straight from static assets for every host on the
+    // zone route. Keep exactly that for every host except www, which follows the apex
+    // (domain-root Pages) redirect to its versioned favicon, kept on the www host.
+    if (url.pathname === '/favicon.ico') {
+      if (url.hostname === 'www.trujillomingorance.com') {
+        const up = await fetch('https://domain-root-2r5.pages.dev/favicon.ico', { redirect: 'manual' });
+        const loc = up.headers.get('Location');
+        if (up.status >= 300 && up.status < 400 && loc) {
+          const target = new URL(loc, 'https://domain-root-2r5.pages.dev/');
+          return new Response(null, {
+            status: 302,
+            headers: { Location: target.pathname + target.search, 'Cache-Control': 'public, max-age=3600' }
+          });
+        }
+        if (up.ok) return new Response(up.body, { status: up.status, headers: up.headers });
+      }
+      if (env.ASSETS) return env.ASSETS.fetch(request);
+    }
+
     let pathLang = '';
     const pathParts = url.pathname.split('/');
     if (pathParts[1] && LANG_IDS.includes(pathParts[1])) {
@@ -703,7 +722,7 @@ export default {
     if (SITE_PAGES[url.pathname]) {
       const p = SITE_PAGES[url.pathname];
       const meta = pageMeta(p.key, pageLang);
-      return htmlResponse({ title: meta.title, description: meta.description, path: p.path, kind: 'site', page: p.page, lang: pageLang, geo }, 200, corsHeaders);
+      return htmlResponse({ title: meta.title, description: meta.description, path: p.path, kind: 'site', page: p.page, lang: pageLang, urlLang: pathLang || 'es', geo }, 200, corsHeaders);
     }
 
     if (url.pathname === '/api/geo' && isGetOrHead) {
@@ -742,6 +761,7 @@ export default {
         kind: 'site',
         page: 'login',
         lang: pageLang,
+        urlLang: pathLang || 'es',
         geo
       }, 200, corsHeaders);
     }
@@ -806,6 +826,7 @@ export default {
         kind: 'site',
         page: 'register',
         lang: pageLang,
+        urlLang: pathLang || 'es',
         geo
       }, 200, corsHeaders);
     }
@@ -823,6 +844,7 @@ export default {
         kind: 'app',
         page: 'chat',
         lang: pageLang,
+        urlLang: pathLang || 'es',
         geo
       }, 200, corsHeaders);
     }
@@ -2174,6 +2196,7 @@ export default {
       kind: 'site',
       page: '404',
       lang: pageLang,
+      urlLang: pathLang || 'es',
       geo
     }, 404, corsHeaders);
   }

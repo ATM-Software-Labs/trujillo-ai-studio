@@ -94,7 +94,7 @@ img { max-width: 100%; display: block; }
   border-radius: 18px;
   padding: 22px;
 }
-.card h3 { font-size: 1.02rem; letter-spacing: -0.02em; margin-bottom: 8px; }
+.card h3, .grid-3 > .card > h2 { font-size: 1.02rem; letter-spacing: -0.02em; margin-bottom: 8px; }
 .card p, .prose p { color: var(--muted); font-size: 0.94rem; }
 .prose { max-width: 760px; margin: 0 auto 80px; }
 .prose h2 { font-size: 1.35rem; letter-spacing: -0.03em; margin: 36px 0 10px; }

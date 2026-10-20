@@ -9,7 +9,7 @@
       return '<a href="' + href + '"' + (active === key ? ' class="active"' : '') + '>' + label + '</a>';
     }
     return '<nav class="site-nav" aria-label="Principal"><div class="site-nav-inner">' +
-      '<a class="brand" href="/"><img src="/avatar.png" width="28" height="28" alt="Trujillo AI"><span>Trujillo AI</span></a>' +
+      '<a class="brand" href="/"><img src="/avatar.png" width="28" height="28" alt=""><span>Trujillo AI</span></a>' +
       '<div class="nav-links">' +
       item('/', t('navChat'), 'chat') +
       item('/features', t('navFeatures'), 'features') +
@@ -17,7 +17,7 @@
       item('/docs', t('docsLink'), 'docs') +
       item('/about', t('navAbout'), 'about') +
       '</div>' +
-      '<div class="nav-cta"><a class="btn btn-ghost" href="/login">' + t('access') + '</a><a class="btn btn-white" href="/">' + t('navStart') + '</a></div>' +
+      '<div class="nav-cta"><a class="btn btn-ghost" href="/login">' + t('access') + '</a><a class="btn btn-white" href="/">' + t('nfHome') + '</a></div>' +
       '</div></nav>';
   }
 
@@ -54,15 +54,15 @@
       '<header class="hero wrap"><p class="kicker">' + t('featKicker') + '</p><h1>' + t('featH1') + '</h1>' +
       '<p class="lede">' + t('featLede') + '</p></header>' +
       '<main class="wrap"><div class="grid-3">' +
-      '<article class="card"><h3>' + t('docsChatH') + '</h3><p>' + t('docsChatP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsProjectsH') + '</h3><p>' + t('docsProjectsP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsFilesH') + '</h3><p>' + t('docsFilesP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsComposerH') + '</h3><p>' + t('docsSearchP') + ' ' + t('docsImageP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsAccountH') + '</h3><p>' + t('docsAccountP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsMailH') + '</h3><p>' + t('docsMailP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsLangH') + '</h3><p>' + t('docsLangP') + '</p></article>' +
-      '<article class="card"><h3>' + t('docsKeysH') + '</h3><p>' + t('docsKeysP') + '</p></article>' +
-      '<article class="card"><h3>BYOK</h3><p>' + t('byokHint') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsChatH') + '</h2><p>' + t('docsChatP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsProjectsH') + '</h2><p>' + t('docsProjectsP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsFilesH') + '</h2><p>' + t('docsFilesP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsComposerH') + '</h2><p>' + t('docsSearchP') + ' ' + t('docsImageP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsAccountH') + '</h2><p>' + t('docsAccountP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsMailH') + '</h2><p>' + t('docsMailP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsLangH') + '</h2><p>' + t('docsLangP') + '</p></article>' +
+      '<article class="card"><h2>' + t('docsKeysH') + '</h2><p>' + t('docsKeysP') + '</p></article>' +
+      '<article class="card"><h2>BYOK</h2><p>' + t('byokHint') + '</p></article>' +
       '</div></main>' + footer();
   }
   function viewModels() {
@@ -128,11 +128,11 @@
 
   function authMarkup(initialTab) {
     return '<nav class="site-nav" aria-label="Principal"><div class="site-nav-inner">' +
-      '<a class="brand" href="/"><img src="/avatar.png" width="28" height="28" alt="Trujillo AI"><span>Trujillo AI</span></a>' +
+      '<a class="brand" href="/"><img src="/avatar.png" width="28" height="28" alt=""><span>Trujillo AI</span></a>' +
       '<div class="nav-cta"><a class="btn btn-ghost" href="/docs">' + t('docsLink') + '</a><a class="btn btn-white" href="/">' + t('navChat') + '</a></div>' +
       '</div></nav>' +
       '<main class="auth-shell"><div class="auth-card">' +
-      '<div class="auth-brand"><img src="/avatar.png" alt="Trujillo AI"><h1>Trujillo AI</h1>' +
+      '<div class="auth-brand"><img src="/avatar.png" alt=""><h1>Trujillo AI</h1>' +
       '<p>' + t('authLede') + '</p></div>' +
       '<div id="alert-box" class="alert-banner alert-error"></div>' +
       '<div class="tabs-nav" id="auth-tabs">' +

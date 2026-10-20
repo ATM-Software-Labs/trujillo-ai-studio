@@ -1,6 +1,6 @@
 import { ORIGIN, BRAND, jsonLdFor, hreflangLinks, localizedUrl } from './seo.js'
 
-const ASSET_V = '51'
+const ASSET_V = '52'
 
 function esc(s) {
   return String(s || '')
@@ -9,9 +9,10 @@ function esc(s) {
     .replace(/</g, '&lt;')
 }
 
-export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', ogType = 'website', robots = 'index, follow', geo = null }) {
-  const canonicalUrl = localizedUrl(path, lang)
-  const url = ORIGIN + path
+export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', urlLang = 'es', ogType = 'website', robots = 'index, follow', geo = null }) {
+  // Canonical follows the URL (unprefixed = es, /en/... = en), not the negotiated UI language.
+  const canonicalUrl = localizedUrl(path, urlLang)
+  const url = canonicalUrl
   const css = kind === 'app' ? '/assets/app.css' : '/assets/site.css'
   const js = kind === 'app' ? '/assets/app.js' : '/assets/site.js'
   const fonts = kind === 'app'
