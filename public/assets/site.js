@@ -38,7 +38,7 @@
   function atmNet() {
     var l = (document.documentElement.lang || 'es').slice(0, 2);
     var L = l === 'es' ? ['Sitios de ATM Software Labs', 'Guías'] : l === 'ca' ? ['Llocs d\u2019ATM Software Labs', 'Guies'] : ['ATM Software Labs sites', 'Guides'];
-    var S = [['labs', 'ATM Labs'], ['invest', 'INVEST'], ['charts', 'Markets Briefing'], ['ai', 'Trujillo AI'], ['guides', L[1]], ['tools', 'Tools'], ['rewrite', 'Rewrite'], ['alberto', 'Alberto']];
+    var S = [['labs', 'ATM Labs'], ['invest', 'INVEST'], ['charts', 'Markets Briefing'], ['ai', 'Trujillo AI'], ['guides', L[1]], ['tools', 'Tools'], ['rewrite', 'Rewrite']];
     return '<div class="atm-net"><div class="atm-net__in"><a class="atm-net__brand" href="https://trujillomingorance.com/">ATM Software Labs</a><nav aria-label="' + L[0] + '"><ul class="atm-net__sites">' +
       S.map(function (x) { return '<li><a href="https://' + x[0] + '.trujillomingorance.com/"' + (x[0] === 'ai' ? ' aria-current="page"' : '') + '>' + x[1] + '</a></li>'; }).join('') +
       '</ul></nav></div></div>';
