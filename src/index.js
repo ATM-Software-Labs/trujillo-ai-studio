@@ -560,7 +560,7 @@ export default {
             'X-Robots-Tag': 'noindex, nofollow',
             'X-Content-Type-Options': 'nosniff',
             'Referrer-Policy': 'strict-origin-when-cross-origin',
-            'Content-Security-Policy': "default-src 'self' " + APEX + "; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' " + APEX + "; img-src 'self' data: " + APEX + "; font-src 'self' " + APEX + "; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri " + APEX + "; form-action 'none'; object-src 'none'"
+            'Content-Security-Policy': "default-src 'self' " + APEX + "; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' " + APEX + "; img-src 'self' data: " + APEX + "; font-src 'self' " + APEX + "; connect-src 'self' " + APEX + " https://cloudflareinsights.com; frame-ancestors 'none'; base-uri " + APEX + "; form-action 'none'; object-src 'none'"
           }
         });
       } catch (err) {
