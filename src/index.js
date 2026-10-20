@@ -497,10 +497,19 @@ export default {
     );
 
     if (!IS_AI_HOST && url.hostname.endsWith('trujillomingorance.com')) {
-      // Unmapped subdomain: serve the gateway 404 and its CSS/JS from the same origin.
+      // Unmapped subdomain: serve the apex (domain-root) 404 with status 404.
+      // The page uses root-relative URLs (/brand/tokens.css, /assets/fonts/*, /brand/logo/*,
+      // favicons, /terms, /en/...). A <base> pointing at the apex makes every one of them
+      // resolve there (apex /brand/* and /assets/fonts/* send ACAO *), so the page renders
+      // styled and its links lead to real pages. Asset paths are still proxied from the
+      // gateway as a fallback for copies of the HTML without the <base>.
       const GATEWAY = 'https://domain-root-2r5.pages.dev';
+      const APEX = 'https://trujillomingorance.com';
       const path = originalPath;
-      const isNfAsset = path.startsWith('/css/') || path.startsWith('/js/') || path === '/avatar.png' || path === '/favicon.ico';
+      const isNfAsset = path.startsWith('/css/') || path.startsWith('/js/') || path.startsWith('/brand/') ||
+        path.startsWith('/assets/') || path === '/avatar.png' || path === '/favicon.svg' ||
+        path === '/favicon-32.png' || path === '/apple-touch-icon.png' || path === '/site.webmanifest' ||
+        path === '/icon-192.png' || path === '/icon-512.png';
       try {
         if (isNfAsset) {
           const assetRes = await fetch(GATEWAY + path + url.search);
@@ -513,13 +522,15 @@ export default {
                 ? 'image/png'
                 : (assetRes.headers.get('Content-Type') || 'application/octet-stream');
           headers.set('Content-Type', type);
-          headers.set('Cache-Control', 'public, max-age=3600');
+          headers.set('Cache-Control', assetRes.ok ? 'public, max-age=3600' : 'no-store');
+          headers.set('X-Content-Type-Options', 'nosniff');
+          headers.set('Access-Control-Allow-Origin', '*');
           return new Response(assetRes.body, { status: assetRes.status, headers });
         }
         let html = '';
         try {
           const nfCache = caches.default;
-          const nfKey = new Request(GATEWAY + '/404-html-v1');
+          const nfKey = new Request(GATEWAY + '/404-html-v2');
           let nfRes = await nfCache.match(nfKey);
           if (!nfRes) {
             nfRes = await fetch(GATEWAY + '/404', {
@@ -537,12 +548,19 @@ export default {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
           });
         }
+        if (!/<base\s/i.test(html)) {
+          html = html.replace(/<head([^>]*)>/i, '<head$1>\n  <base href="' + APEX + '/">');
+        }
         return new Response(html, {
           status: 404,
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'public, max-age=300, s-maxage=3600',
-            'Access-Control-Allow-Origin': '*'
+            'Access-Control-Allow-Origin': '*',
+            'X-Robots-Tag': 'noindex, nofollow',
+            'X-Content-Type-Options': 'nosniff',
+            'Referrer-Policy': 'strict-origin-when-cross-origin',
+            'Content-Security-Policy': "default-src 'self' " + APEX + "; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' " + APEX + "; img-src 'self' data: " + APEX + "; font-src 'self' " + APEX + "; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none'; base-uri " + APEX + "; form-action 'none'; object-src 'none'"
           }
         });
       } catch (err) {
