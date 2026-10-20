@@ -31,7 +31,17 @@
       '<div><div class="section-label">' + t('footerProduct') + '</div><a href="/">' + t('navChat') + '</a><a href="/features">' + t('navFeatures') + '</a><a href="/models">' + t('navModels') + '</a><a href="/docs">' + t('docsLink') + '</a></div>' +
       '<div><div class="section-label">' + t('footerCompany') + '</div><a href="/about">' + t('navAbout') + '</a><a href="https://trujillomingorance.com">trujillomingorance.com</a><a href="https://github.com/atrumin16">GitHub</a><a href="mailto:alberto@trujillomingorance.com">alberto@trujillomingorance.com</a></div>' +
       '<div><div class="section-label">' + t('footerLegal') + '</div><a href="/terms-of-use">' + t('footerLegal') + '</a><a href="/privacy-policy">' + t('privacy') + '</a><a href="/llms.txt">llms.txt</a><a href="/sitemap.xml">Sitemap</a></div>' +
-      '</div></footer>';
+      '</div>' + atmNet() + '</footer>';
+  }
+
+  // ATM Software Labs: shared network strip (same markup as the other trujillomingorance.com sites).
+  function atmNet() {
+    var l = (document.documentElement.lang || 'es').slice(0, 2);
+    var L = l === 'es' ? ['Sitios de ATM Software Labs', 'Guías'] : l === 'ca' ? ['Llocs d\u2019ATM Software Labs', 'Guies'] : ['ATM Software Labs sites', 'Guides'];
+    var S = [['labs', 'ATM Labs'], ['invest', 'INVEST'], ['charts', 'Markets Briefing'], ['ai', 'Trujillo AI'], ['guides', L[1]], ['tools', 'Tools'], ['rewrite', 'Rewrite'], ['alberto', 'Alberto']];
+    return '<div class="atm-net"><div class="atm-net__in"><a class="atm-net__brand" href="https://trujillomingorance.com/">ATM Software Labs</a><nav aria-label="' + L[0] + '"><ul class="atm-net__sites">' +
+      S.map(function (x) { return '<li><a href="https://' + x[0] + '.trujillomingorance.com/"' + (x[0] === 'ai' ? ' aria-current="page"' : '') + '>' + x[1] + '</a></li>'; }).join('') +
+      '</ul></nav></div></div>';
   }
 
   function card(title, html) {
