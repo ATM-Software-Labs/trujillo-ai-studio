@@ -88,6 +88,7 @@ try {
 ${gsi}${marked}<script src="/assets/i18n/${esc(lang)}.js?v=${ASSET_V}" defer></script>
 <script src="/assets/i18n.js?v=${ASSET_V}" defer></script>
 <script src="${js}?v=${ASSET_V}" defer></script>
+<script src="/assets/atm-internal.js?v=${ASSET_V}" defer></script>
 </body>
 </html>
 `

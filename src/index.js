@@ -62,6 +62,7 @@ import {
 import { getRealtimeSystemTimeContext, resolveTimezone } from './time.js';
 import { mergeGuideFeed, STATIC_GUIDES, STATIC_SLUGS, HIDDEN_KEY } from './guides_feed.js';
 import { consumeMailTicket, honeypotFilled, issueMailTicket, rateMail } from './mail_gate.js';
+import { handleInternalAdmin } from './admin_internal.js';
 
 const APP_FROM_EMAIL = 'no-reply@trujillomingorance.com';
 const APP_SUPPORT_EMAIL = 'alberto@trujillomingorance.com';
@@ -1735,6 +1736,11 @@ export default {
       headers.append('Set-Cookie', 'ta_session=; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=0');
       headers.append('Set-Cookie', ['auth', 'token'].join('_') + '=; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=0');
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
+    }
+
+    // Panel interno central (guides /admin): recuentos, solo sesión interna verificada por guides
+    if (url.pathname === '/api/admin/summary') {
+      return handleInternalAdmin(request, env);
     }
 
     if (url.pathname === '/api/auth/me' && isGetOrHead) {
