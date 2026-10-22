@@ -15,10 +15,9 @@ if (!BOT_TOKEN || !APPLICATION_ID) {
 
 
 const MODEL_CHOICES = [
-  { name: "MetaLlama 3.1 8B", value: "llama-3.1-8b-instant" },
-  { name: "MetaLlama 3.3 70B", value: "llama-3.3-70b-versatile" },
   { name: "OpenAI GPT OSS 120B", value: "openai/gpt-oss-120b" },
   { name: "OpenAI GPT OSS 20B", value: "openai/gpt-oss-20b" },
+  { name: "Qwen 3.8 27B", value: "qwen/qwen3.8-27b" },
   { name: "OpenAI Whisper", value: "whisper-large-v3" },
   { name: "OpenAI Whisper Large V3 Turbo", value: "whisper-large-v3-turbo" }
 ];

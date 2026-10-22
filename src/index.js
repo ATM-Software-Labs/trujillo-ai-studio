@@ -73,12 +73,9 @@ const X_OAUTH_CLIENT_ID = 'NF94WVVIT1dzSXZNaTJuYjRXSEc6MTpjaQ';
 const X_OAUTH_CLIENT_SECRET = '';
 
 const AVAILABLE_OPEN_MODELS = [
-  { id: 'llama-3.1-8b-instant', name: 'MetaLlama 3.1 8B', context: 131072 },
-  { id: 'llama-3.3-70b-versatile', name: 'MetaLlama 3.3 70B', context: 131072 },
   { id: 'openai/gpt-oss-120b', name: 'OpenAI GPT OSS 120B', context: 131072 },
   { id: 'openai/gpt-oss-20b', name: 'OpenAI GPT OSS 20B', context: 131072 },
   { id: 'qwen/qwen3.8-27b', name: 'Qwen 3.8 27B Vision & Reasoning', context: 131072 },
-  { id: 'llama-3.2-11b-vision-preview', name: 'Llama 3.2 11B Vision', context: 131072 },
   { id: 'whisper-large-v3', name: 'OpenAI Whisper', context: 0 },
   { id: 'whisper-large-v3-turbo', name: 'OpenAI Whisper Large V3 Turbo', context: 0 }
 ];
@@ -2365,6 +2362,8 @@ async function callGroqChat({ groqApiKey, messages, requestedModel = 'openai/gpt
       if (modelToTry.includes('gpt-oss')) {
         requestPayload.reasoning_format = 'hidden';
         requestPayload.reasoning_effort = 'low';
+        // El razonamiento consume max_tokens: margen para que las llamadas cortas no se queden sin texto
+        requestPayload.max_tokens = maxTokens + 256;
       } else if (modelToTry.includes('qwen')) {
         requestPayload.reasoning_format = 'hidden';
         requestPayload.reasoning_effort = 'none';

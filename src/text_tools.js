@@ -1,6 +1,6 @@
 /**
  * text_tools.js - Motores de Auditoría, Tono, Hooks, Coherencia y Traducción Contextual
- * Powered by Groq LPU (llama-3.3-70b-versatile / llama-3.1-8b-instant) con JSON estricto
+ * Powered by Groq LPU (openai/gpt-oss-120b / gpt-oss-20b / qwen3.8-27b) con JSON estricto
  */
 
 export const TOOL_DEFINITIONS = {
@@ -174,11 +174,11 @@ export async function handleTextToolsRequest(request, env, ctx, corsHeaders) {
     // Escalera de modelos para inferencia estructurada ultrarrápida
     const modelsToTry = [
       model,
-      'llama-3.3-70b-versatile',
+      // Solo modelos disponibles para la clave de Groq
       'openai/gpt-oss-120b',
-      'llama-3.1-8b-instant',
-      'openai/gpt-oss-20b'
-    ].filter(Boolean);
+      'openai/gpt-oss-20b',
+      'qwen/qwen3.8-27b'
+    ].filter((m, i, a) => m && a.indexOf(m) === i);
 
     const attemptErrors = [];
     let resultJson = null;

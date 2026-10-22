@@ -1,4 +1,4 @@
-/** Prompts + parser for the optional background extractor (llama-3.1-8b-instant). */
+/** Prompts + parser for the optional background extractor (openai/gpt-oss-20b). */
 
 export function enrichExtractMessages(prompt, locale = 'es') {
   const lang = locale || 'es'

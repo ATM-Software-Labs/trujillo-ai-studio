@@ -96,7 +96,6 @@ async function cupoDisponible(env) {
 export function handleOpenAIModels(corsHeaders) {
   const data = [
     ...VISION_MODELS.map((id) => ({ id, object: 'model', owned_by: 'trujillo-ai' })),
-    { id: 'llama-3.2-11b-vision-preview', object: 'model', owned_by: 'trujillo-ai' },
     { id: 'gpt-4o', object: 'model', owned_by: 'trujillo-ai' },
     { id: 'gpt-4-vision-preview', object: 'model', owned_by: 'trujillo-ai' }
   ]
@@ -132,7 +131,7 @@ export async function handleOpenAIChatCompletions(request, env, ctx, { callGroqC
   const maxTokens = typeof body.max_tokens === 'number' ? Math.min(2048, Math.max(64, Math.round(body.max_tokens))) : 1200
   let requested = typeof body.model === 'string' && body.model.trim() ? body.model.trim().slice(0, 80) : VISION_MODELS[0]
   if (requested === 'qwen/qwen3.6-27b' || requested === 'qwen/qwen3.6') requested = 'qwen/qwen3.8-27b'
-  if (requested === 'gpt-4o' || requested === 'gpt-4-vision-preview' || requested === 'gpt-4o-mini') requested = VISION_MODELS[0]
+  if (requested === 'gpt-4o' || requested === 'gpt-4-vision-preview' || requested === 'gpt-4o-mini' || requested === 'llama-3.2-11b-vision-preview') requested = VISION_MODELS[0]
 
   const result = await callGroqChat({
     groqApiKey: env.GROQ_API_KEY,
