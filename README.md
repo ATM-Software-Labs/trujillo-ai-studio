@@ -41,7 +41,7 @@
 
 ## Funciones
 
-- **Chat en streaming** con varios modelos servidos por Groq: GPT-OSS 120B (por defecto), GPT-OSS 20B, Llama 3.3 70B, Llama 3.1 8B y Qwen 3.8 27B. Si un modelo falla o llega a su límite, se prueba el siguiente.
+- **Chat en streaming** con varios modelos servidos por Groq: GPT-OSS 120B (por defecto), GPT-OSS 20B y Qwen 3.8 27B (también visión). Si un modelo falla o llega a su límite, se prueba el siguiente.
 - **Imágenes:** análisis de fotos con modelos de visión (la imagen se reduce a 768 px en el navegador) y generación de imágenes a partir de texto con Pollinations (modelo Flux).
 - **Voz a texto** con Whisper Large v3 Turbo (`/api/transcribe`).
 - **Búsqueda web** opcional para añadir resultados recientes a la respuesta.

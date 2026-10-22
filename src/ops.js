@@ -10,11 +10,11 @@ const OWNER_INBOXES = ['alberto@trujillomingorance.com', 'atrumin16@gmail.com']
 const OPS_TTL = 14 * 24 * 3600
 const IDEA_MAX = 4000
 const IDEA_MIN = 8
+// Solo modelos disponibles para la clave de Groq (GET /openai/v1/models, oct 2026)
 const VISION_MODELS = [
-  'qwen/qwen3.8-27b',
-  'llama-3.2-11b-vision-preview'
+  'qwen/qwen3.8-27b'
 ]
-const FAST_TEXT_MODEL = 'llama-3.1-8b-instant'
+const FAST_TEXT_MODEL = 'openai/gpt-oss-20b'
 const WHISPER_MODEL = 'whisper-large-v3-turbo'
 
 export { OWNER_INBOX, OWNER_INBOXES, VISION_MODELS, FAST_TEXT_MODEL, WHISPER_MODEL }
@@ -78,6 +78,10 @@ export function normalizeModel(model) {
   if (m === 'qwen/qwen3.6-27b' || m === 'qwen/qwen3.6') return 'qwen/qwen3.8-27b';
   if (m === 'trujillo-core' || m === 'default' || m === 'groq-compound') return 'openai/gpt-oss-120b';
   if (m === 'gpt-4o' || m === 'gpt-4o-mini' || m === 'gpt-4-vision-preview') return 'qwen/qwen3.8-27b';
+  // Modelos retirados de la clave: se redirigen a los disponibles (comandos de Discord y localStorage antiguos)
+  if (m === 'llama-3.3-70b-versatile') return 'openai/gpt-oss-120b';
+  if (m === 'llama-3.1-8b-instant') return 'openai/gpt-oss-20b';
+  if (m === 'llama-3.2-11b-vision-preview') return 'qwen/qwen3.8-27b';
   return m;
 }
 
@@ -87,10 +91,9 @@ export function groqLadder(requested, { vision = false, skipFallback = false } =
   if (skipFallback) return [req];
   const list = [
     req,
-    req !== 'openai/gpt-oss-120b' ? 'openai/gpt-oss-120b' : null,
-    'llama-3.3-70b-versatile',
-    'llama-3.1-8b-instant',
-    'openai/gpt-oss-20b'
+    'openai/gpt-oss-120b',
+    'openai/gpt-oss-20b',
+    'qwen/qwen3.8-27b'
   ].filter(Boolean);
   return list.filter((m, i, arr) => arr.indexOf(m) === i);
 }
