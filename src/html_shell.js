@@ -1,6 +1,6 @@
 import { ORIGIN, BRAND, jsonLdFor, hreflangLinks, localizedUrl } from './seo.js'
 
-const ASSET_V = '54'
+const ASSET_V = '55'
 
 function esc(s) {
   return String(s || '')
@@ -88,7 +88,7 @@ try {
 ${gsi}${marked}<script src="/assets/i18n/${esc(lang)}.js?v=${ASSET_V}" defer></script>
 <script src="/assets/i18n.js?v=${ASSET_V}" defer></script>
 <script src="${js}?v=${ASSET_V}" defer></script>
-<script src="/assets/atm-internal.js?v=${ASSET_V}" defer></script>
+${kind === 'app' ? `<script src="/assets/prompts.js?v=${ASSET_V}" defer></script>\n` : ''}<script src="/assets/atm-internal.js?v=${ASSET_V}" defer></script>
 </body>
 </html>
 `
