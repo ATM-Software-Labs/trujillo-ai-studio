@@ -43,6 +43,8 @@
 
 - **Chat en streaming** con varios modelos servidos por Groq: GPT-OSS 120B (por defecto), GPT-OSS 20B y Qwen 3.8 27B (también visión). Si un modelo falla o llega a su límite, se prueba el siguiente.
 - **Imágenes:** análisis de fotos con modelos de visión (la imagen se reduce a 768 px en el navegador) y generación de imágenes a partir de texto con Pollinations (modelo Flux).
+- **Proyectos:** agrupan chats con nombre, descripción, instrucciones, archivos de texto y rol por defecto; las instrucciones y los archivos se envían como contexto en los chats del proyecto. Se guardan en el navegador (`ta_projects`).
+- **Artifacts:** panel lateral con vista previa de HTML/SVG en un marco aislado (`sandbox` sin `allow-same-origin`, CSP estricta), código, Markdown saneado, versiones, copiar y descargar.
 - **Voz a texto** con Whisper Large v3 Turbo (`/api/transcribe`).
 - **Búsqueda web** opcional para añadir resultados recientes a la respuesta.
 - **Memoria por usuario:** notas breves de contexto (preferencias, nivel, zona horaria) guardadas en Workers KV.
@@ -82,7 +84,8 @@ flowchart LR
 
 ## Seguridad
 
-- **Sesiones:** JWT HMAC-SHA256 en cookies `HttpOnly; Secure` del dominio. OAuth con `state` y PKCE en X.
+- **Sesiones:** JWT HMAC-SHA256 en cookies `HttpOnly; Secure` del dominio. OAuth de X con `state` comprobado y PKCE S256 con verificador aleatorio por inicio de sesión. `/api/auth/logout` solo acepta `POST`.
+- **Microsoft Entra ID (admins):** OIDC con `state`, `nonce` y PKCE; se comprueban firma, `iss`, `aud` y `tid` del inquilino. Desactivado hasta que existan los secretos; `MS_LOGIN_DISABLED=1` lo apaga.
 - **Discord:** cada interacción se verifica con la clave pública Ed25519 de la aplicación.
 - **API OpenAI:** clave Bearer opcional (`GATEWAY_API_KEY`) y cupo diario.
 - **Cabeceras:** CSP, `nosniff`, Referrer-Policy y bloqueo de rutas de escáneres (`.env`, `phpinfo`…) con 403.
@@ -127,6 +130,18 @@ Worker `groq-discord-bot` con dominio propio `ai.trujillomingorance.com` (y `gro
 | `OWNER_EMAIL`, `OWNER_INBOX`, `OWNER_EMAILS` | variables | Destinatarios del informe diario |
 | `INFERENCE_BASE_URL`, `INFERENCE_API_KEY`, `INFERENCE_MODEL` | opcionales | Proveedor alternativo compatible con OpenAI |
 | `TRUJILLO_AI_SYNC_SECRET` | secreto, opcional | Sincronización con otras webs |
+| `MS_CLIENT_ID`, `MS_TENANT_ID`, `MS_CLIENT_SECRET` | secretos, opcionales | Acceso de administradores con Microsoft Entra ID |
+| `MS_ALLOWED_DOMAIN`, `ADMIN_EMAILS`, `MS_LOGIN_DISABLED` | variables, opcionales | Dominio permitido, lista de admins e interruptor de apagado |
+
+## Versiones recientes
+
+| Etapa | Commit | Versión de Cloudflare |
+|---|---|---|
+| Seguridad (CSP, cabeceras, marco aislado, Entra apagado) | `3dec5ce` | `158f47b8-1ba4-41a3-9219-afdf9e449eed` |
+| UI | `ad641ba` | `1df56713-d504-4855-860c-9175fe547551` |
+| Pulido visual | `03b4e88` | `4f1580d1-8f78-4e3f-8001-4edda3f82b04` |
+| Artifacts | `6c4c46c` | `02776a94-06d6-487d-89ea-6ee384a1ccc9` |
+| Proyectos | `cec9ea1` | `09748a1d-9b7b-427b-80b4-163f2bc855db` |
 
 ## Estructura
 

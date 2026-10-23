@@ -396,21 +396,41 @@
         if (mountGoogle() || n > 40) clearInterval(timer);
       }, 150);
     })();
+    function b64url(bytes) {
+      var s = ''; for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+      return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
     function startXLogin() {
-      var state = 'x_oauth_' + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem('trujillo_x_oauth_state', state);
+      var rnd = new Uint8Array(32); crypto.getRandomValues(rnd);
+      var verifier = b64url(rnd);
+      var sb = new Uint8Array(12); crypto.getRandomValues(sb);
+      var state = 'x_oauth_' + b64url(sb);
+      try { sessionStorage.setItem('trujillo_x_oauth_state', state); sessionStorage.setItem('trujillo_x_oauth_verifier', verifier); } catch (e) {}
+      try { localStorage.removeItem('trujillo_x_oauth_state'); } catch (e2) {}
       var redirectUri = encodeURIComponent(window.location.origin + '/login?auth=x_callback');
-      window.location.href = 'https://twitter.com/i/oauth2/authorize?response_type=code&client_id=' + X_CLIENT_ID +
-        '&redirect_uri=' + redirectUri + '&scope=users.read%20tweet.read&state=' + state +
-        '&code_challenge=challenge&code_challenge_method=plain';
+      function go(challenge, method) {
+        window.location.href = 'https://twitter.com/i/oauth2/authorize?response_type=code&client_id=' + X_CLIENT_ID +
+          '&redirect_uri=' + redirectUri + '&scope=users.read%20tweet.read&state=' + encodeURIComponent(state) +
+          '&code_challenge=' + challenge + '&code_challenge_method=' + method;
+      }
+      if (window.crypto && crypto.subtle && window.TextEncoder) {
+        crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)).then(function (h) { go(b64url(new Uint8Array(h)), 'S256'); }, function () { go(verifier, 'plain'); });
+      } else {
+        go(verifier, 'plain');
+      }
     }
     if (urlParams.get('error')) showAlert('No se completó el acceso con X.');
     if (isXCallback) {
       var code = urlParams.get('code');
+      var gotState = urlParams.get('state') || '';
+      var wantState = '', verifier = '';
+      try { wantState = sessionStorage.getItem('trujillo_x_oauth_state') || ''; verifier = sessionStorage.getItem('trujillo_x_oauth_verifier') || ''; sessionStorage.removeItem('trujillo_x_oauth_state'); sessionStorage.removeItem('trujillo_x_oauth_verifier'); } catch (e) {}
       window.history.replaceState({}, document.title, window.location.pathname);
-      if (code) {
+      if (code && (!wantState || gotState !== wantState || !verifier)) {
+        showAlert('La sesión de acceso con X ha caducado o no coincide. Vuelve a intentarlo.');
+      } else if (code) {
         showAlert('Confirmando acceso con X...', true);
-        postAuth('/api/auth/x', { code: code, redirectUri: window.location.origin + '/login?auth=x_callback' })
+        postAuth('/api/auth/x', { code: code, code_verifier: verifier, redirectUri: window.location.origin + '/login?auth=x_callback' })
           .then(finishLogin)
           .catch(function (err) { showAlert(err.message); });
       }

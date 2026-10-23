@@ -602,6 +602,7 @@ const worker = {
         if (url.pathname.endsWith('.js')) headers.set('Content-Type', 'application/javascript; charset=UTF-8');
         if (url.pathname.endsWith('.css')) headers.set('Content-Type', 'text/css; charset=UTF-8');
         headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        headers.set('X-Content-Type-Options', 'nosniff');
         return new Response(assetRes.body, { status: 200, headers });
       }
       return assetRes;
@@ -1580,11 +1581,16 @@ const worker = {
         const body = await request.json();
         const code = (body.code || '').trim();
         const clientRedirectUri = body.redirectUri || `${APP_ORIGIN}/login?auth=x_callback`;
+        const codeVerifier = String(body.code_verifier || '');
         if (!code) {
           return new Response(JSON.stringify({ error: 'Falta el código de autorización de X.' }), { status: 400, headers: corsHeaders });
         }
         if (!isAllowedOAuthRedirect(clientRedirectUri)) {
           return new Response(JSON.stringify({ error: 'Redirect de X no permitido.' }), { status: 400, headers: corsHeaders });
+        }
+        // PKCE (RFC 7636): the browser generates a random verifier per login; a fixed one would make PKCE useless.
+        if (!/^[A-Za-z0-9\-._~]{43,128}$/.test(codeVerifier)) {
+          return new Response(JSON.stringify({ error: 'Sesión de acceso con X caducada. Vuelve a intentarlo.' }), { status: 400, headers: corsHeaders });
         }
 
         const xClientId = env.X_CLIENT_ID || X_OAUTH_CLIENT_ID;
@@ -1598,7 +1604,7 @@ const worker = {
           grant_type: 'authorization_code',
           client_id: xClientId,
           redirect_uri: clientRedirectUri,
-          code_verifier: 'challenge'
+          code_verifier: codeVerifier
         };
 
         if (xClientSecret) {
@@ -1805,6 +1811,9 @@ const worker = {
     }
 
     if (url.pathname === '/api/auth/logout') {
+      if (request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'method_not_allowed' }), { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json', Allow: 'POST' } });
+      }
       const headers = new Headers(corsHeaders);
       headers.set('Content-Type', 'application/json');
       headers.append('Set-Cookie', 'ta_session=; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
