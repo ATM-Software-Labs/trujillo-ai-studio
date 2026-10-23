@@ -1015,7 +1015,7 @@ html.tap-modal-open { overflow: hidden; }
     </div>
     <div class="art-split" id="art-split">
       <textarea class="art-editor" id="art-editor" spellcheck="false" placeholder="Escribe aquí el contenido. La IA genera una base; tú la editas." aria-label="Editor del artifact"></textarea>
-      <iframe class="art-preview" id="art-preview" hidden sandbox="allow-scripts allow-forms" title="Vista del artifact"></iframe>
+      <iframe class="art-preview" id="art-preview" hidden sandbox="allow-scripts allow-forms allow-modals allow-popups" referrerpolicy="no-referrer" title="Vista del artifact"></iframe>
     </div>
   </aside>
 </div>
@@ -1731,6 +1731,45 @@ html.tap-modal-open { overflow: hidden; }
     return text;
   }
 
+  // Allowlist HTML sanitizer for model/shared content rendered with innerHTML.
+  var SAFE_TAGS = { A:1, ABBR:1, B:1, BLOCKQUOTE:1, BR:1, BUTTON:1, CODE:1, DEL:1, DETAILS:1, DIV:1, EM:1, H1:1, H2:1, H3:1, H4:1, H5:1, H6:1, HR:1, I:1, IMG:1, INPUT:1, KBD:1, LI:1, MARK:1, OL:1, P:1, PRE:1, S:1, SMALL:1, SPAN:1, STRONG:1, SUB:1, SUMMARY:1, SUP:1, TABLE:1, TBODY:1, TD:1, TFOOT:1, TH:1, THEAD:1, TR:1, U:1, UL:1 };
+  var DROP_TAGS = { SCRIPT:1, STYLE:1, IFRAME:1, OBJECT:1, EMBED:1, LINK:1, META:1, BASE:1, FORM:1, TEXTAREA:1, SELECT:1, SVG:1, MATH:1, TEMPLATE:1, NOSCRIPT:1, FRAME:1, FRAMESET:1, AUDIO:1, VIDEO:1, SOURCE:1, PORTAL:1 };
+  var SAFE_ATTRS = { href:1, src:1, alt:1, title:1, 'class':1, style:1, target:1, rel:1, download:1, loading:1, colspan:1, rowspan:1, align:1, start:1, type:1, checked:1, disabled:1, open:1 };
+  function safeUrl(v, isImg) {
+    var u = String(v || '').replace(/[\u0000-\u0020\u007f-\u009f]+/g, '');
+    if (/^(https?:|mailto:|#|\/(?!\/)|\.\/)/i.test(u)) return true;
+    if (isImg && /^(data:image\/(png|jpe?g|gif|webp);|blob:)/i.test(u)) return true;
+    return !/^[a-z][a-z0-9+.\-]*:/i.test(u) && u.indexOf('//') !== 0;
+  }
+  function sanitizeHtml(html) {
+    // DOMParser documents have no browsing context: nothing runs or loads while we clean.
+    var doc = new DOMParser().parseFromString('<!DOCTYPE html><body>' + String(html || ''), 'text/html');
+    var root = doc.body;
+    (function walk(node) {
+      var kids = Array.prototype.slice.call(node.childNodes);
+      for (var i = 0; i < kids.length; i++) {
+        var el = kids[i];
+        if (el.nodeType === 8) { el.remove(); continue; }
+        if (el.nodeType !== 1) continue;
+        var tag = el.tagName;
+        if (DROP_TAGS[tag]) { el.remove(); continue; }
+        if (!SAFE_TAGS[tag]) { walk(el); while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el); el.remove(); continue; }
+        Array.prototype.slice.call(el.attributes).forEach(function (a) {
+          var n = a.name.toLowerCase();
+          if (!(SAFE_ATTRS[n] || /^data-[\w-]+$/.test(n))) { el.removeAttribute(a.name); return; }
+          if ((n === 'href' || n === 'src') && !safeUrl(a.value, tag === 'IMG')) { el.removeAttribute(a.name); return; }
+          if (n.indexOf('data-') === 0 && /^\s*javascript:/i.test(a.value)) { el.removeAttribute(a.name); return; }
+          if (n === 'style' && /url\s*\(|expression|@import|position\s*:\s*fixed/i.test(a.value)) el.removeAttribute(a.name);
+        });
+        if (tag === 'INPUT' && (el.getAttribute('type') || '').toLowerCase() !== 'checkbox') { el.remove(); continue; }
+        if (tag === 'INPUT') el.setAttribute('disabled', '');
+        if (tag === 'BUTTON') el.setAttribute('type', 'button');
+        if (tag === 'A' && el.getAttribute('target')) el.setAttribute('rel', 'noopener noreferrer');
+        walk(el);
+      }
+    })(root);
+    return root.innerHTML;
+  }
   function renderMarkdown(text) {
     if (!text) return '';
     if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
@@ -1752,10 +1791,10 @@ html.tap-modal-open { overflow: hidden; }
         rawHtml = rawHtml.replace(/(?<![\w/&])\$([A-Za-z][A-Za-z0-9_]{1,8})\b/g, function(match, sym) {
           return '<span class="cashtag-chip" data-sym="' + sym.toUpperCase() + '">$' + sym.toUpperCase() + '</span>';
         });
-        return rawHtml;
+        return sanitizeHtml(rawHtml);
       } catch(e) {}
     }
-    return parseMarkdownFull(text);
+    return sanitizeHtml(parseMarkdownFull(text));
   }
 
   async function showCashtagQuote(symbol, el) {
@@ -2458,7 +2497,7 @@ html.tap-modal-open { overflow: hidden; }
     if (kind === 'markdown') {
       var html = raw;
       try {
-        if (window.marked && typeof marked.parse === 'function') html = marked.parse(raw);
+        if (window.marked && typeof marked.parse === 'function') html = sanitizeHtml(marked.parse(raw));
         else html = '<pre>' + escapeHtml(raw) + '</pre>';
       } catch (e) { html = '<pre>' + escapeHtml(raw) + '</pre>'; }
       return artPreviewShell(html, 'pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto}code{font-family:ui-monospace,monospace}a{color:#0284c7}h1,h2,h3{margin:1.1em 0 .4em}th,td{border:1px solid #e2e8f0;padding:6px 8px}');
@@ -2476,6 +2515,29 @@ html.tap-modal-open { overflow: hidden; }
     }
     return '';
   }
+  // Artifact previews load an isolated document from /sandbox/frame (own strict CSP,
+  // opaque origin because the iframe sandbox lacks allow-same-origin) and receive
+  // their HTML by postMessage. srcdoc would inherit the app's nonce CSP.
+  var artFrameSeq = 0;
+  function setPreviewFrame(frame, html) {
+    if (!frame) return;
+    frame._taHtml = typeof html === 'string' ? html : '';
+    frame.removeAttribute('srcdoc');
+    if (!frame._taHtml) { frame.src = 'about:blank'; return; }
+    artFrameSeq += 1;
+    frame.src = '/sandbox/frame?n=' + artFrameSeq;
+  }
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || d.type !== 'ta-preview-ready') return;
+    var frames = document.querySelectorAll('iframe.art-preview, iframe[data-ta-preview]');
+    for (var i = 0; i < frames.length; i++) {
+      var f = frames[i];
+      if (f.contentWindow && e.source === f.contentWindow && typeof f._taHtml === 'string' && f._taHtml) {
+        f.contentWindow.postMessage({ type: 'ta-preview', html: f._taHtml }, '*');
+      }
+    }
+  });
   function refreshArtifactPreview() {
     var kind = artifactKind(currentArtifact);
     var live = kind === 'html' || kind === 'svg' || kind === 'mermaid' || kind === 'markdown' || kind === 'json' || kind === 'csv' || kind === 'plaintext';
@@ -2485,11 +2547,11 @@ html.tap-modal-open { overflow: hidden; }
     if (!preview) return;
     if (!live) {
       preview.hidden = true;
-      preview.srcdoc = '';
+      setPreviewFrame(preview, '');
       return;
     }
     preview.hidden = false;
-    preview.srcdoc = artPreviewSrcdoc(kind, (currentArtifact && currentArtifact.content) || '');
+    setPreviewFrame(preview, artPreviewSrcdoc(kind, (currentArtifact && currentArtifact.content) || ''));
   }
   function scheduleArtifactPreview() {
     if (artPreviewTimer) clearTimeout(artPreviewTimer);
@@ -2559,7 +2621,7 @@ html.tap-modal-open { overflow: hidden; }
     readArtifactDraft();
     var panel = document.getElementById('art-panel');
     var preview = document.getElementById('art-preview');
-    if (preview) preview.srcdoc = '';
+    if (preview) setPreviewFrame(preview, '');
     if (panel) panel.classList.remove('open');
   }
   function slugifyArtifact(value) {
@@ -3830,8 +3892,9 @@ html.tap-modal-open { overflow: hidden; }
   function logout() {
     authToken = ''; currentUser = null;
     publishedArtifacts = [];
-    localStorage.removeItem('trujillo_ai_token');
-    localStorage.removeItem('trujillo_ai_user');
+    ['trujillo_ai_token', 'trujillo_ai_user', 'auth_token', 'trujillo_auth_token', 'auth_user'].forEach(function(k) { try { localStorage.removeItem(k); } catch (e) {} });
+    // Session cookies are HttpOnly: the server clears them.
+    try { fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(function() {}); } catch (e) {}
     updateUserUI();
     if (sidebarView === 'artifacts') renderSidebar();
     closeModal('modal-profile');

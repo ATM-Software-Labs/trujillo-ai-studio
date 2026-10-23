@@ -243,3 +243,4 @@ img { max-width: 100%; display: block; }
 @media print{.atm-net{display:none}}
 .site-footer .atm-net{margin-top:28px;padding-bottom:0;color:var(--muted)}
 .site-footer .atm-net__sites a{color:inherit}
+.btn-social[hidden] { display: none !important; }

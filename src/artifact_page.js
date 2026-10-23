@@ -368,7 +368,7 @@ export function renderArtifactPage(item) {
   } else if (kind === 'svg') {
     stage = `<div class="community-main"><div class="svgwrap"><img alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(raw)}"></div></div>`;
   } else if (kind === 'mermaid') {
-    stage = `<div class="stage iframe"><iframe class="frame" sandbox="allow-scripts allow-same-origin" srcdoc="${srcdocEsc(mermaidDoc(raw))}" title="Mermaid"></iframe></div>`;
+    stage = `<div class="stage iframe"><iframe class="frame" sandbox="allow-scripts" srcdoc="${srcdocEsc(mermaidDoc(raw))}" title="Mermaid"></iframe></div>`;
   } else if (kind === 'markdown') {
     stage = `<main class="community-main"><article class="doc">${renderMarkdown(stripMatchingH1(raw, item.title))}</article></main>`;
   } else if (kind === 'csv') {

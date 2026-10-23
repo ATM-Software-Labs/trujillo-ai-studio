@@ -40,6 +40,10 @@ X_CLIENT_ID = "NF94WVVIT1dzSXZNaTJuYjRXSEc6MTpjaQ"
 OWNER_EMAIL = "alberto@trujillomingorance.com"
 OWNER_INBOX = "alberto@trujillomingorance.com"
 OWNER_EMAILS = "alberto@trujillomingorance.com,atrumin16@gmail.com"
+# Microsoft (Entra) admin sign-in. Stays OFF until the Worker secrets
+# MS_CLIENT_ID, MS_TENANT_ID and MS_CLIENT_SECRET exist (never in this file).
+ADMIN_EMAILS = "alberto@trujillomingorance.com"
+MS_ALLOWED_DOMAIN = "trujillomingorance.com"
 # Secreto opcional del gateway OpenAI (no va aquí):
 #   npx wrangler secret put GATEWAY_API_KEY
 

@@ -1,6 +1,7 @@
 import { ORIGIN, BRAND, jsonLdFor, hreflangLinks, localizedUrl } from './seo.js'
+import { makeNonce, shellCsp } from './security.js'
 
-const ASSET_V = '55'
+const ASSET_V = '56'
 
 function esc(s) {
   return String(s || '')
@@ -9,7 +10,7 @@ function esc(s) {
     .replace(/</g, '&lt;')
 }
 
-export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', urlLang = 'es', ogType = 'website', robots = 'index, follow', geo = null }) {
+export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', urlLang = 'es', ogType = 'website', robots = 'index, follow', geo = null, nonce = '' }) {
   // Canonical follows the URL (unprefixed = es, /en/... = en), not the negotiated UI language.
   const canonicalUrl = localizedUrl(path, urlLang)
   const url = canonicalUrl
@@ -19,7 +20,7 @@ export function htmlShell({ title, description, path, kind = 'site', page = '', 
     ? 'Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500'
     : 'Inter:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Mono:wght@400;500'
   const marked = kind === 'app'
-    ? '<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>\n'
+    ? '<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi" crossorigin="anonymous" defer></script>\n'
     : ''
   const gsi = (page === 'login' || page === 'register')
     ? '<script src="https://accounts.google.com/gsi/client" async defer></script>\n'
@@ -72,11 +73,11 @@ ${hreflangLinks(path)}
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${fonts}&display=swap">
 <link rel="stylesheet" href="${css}?v=${ASSET_V}">
-<script type="application/ld+json">${JSON.stringify(ld)}</script>
+<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>
 </head>
 <body>
 <div id="app"></div>
-<script>
+<script${nonce ? ` nonce="${esc(nonce)}"` : ''}>
 window.TA_GEO=${JSON.stringify(geo && typeof geo === 'object' ? geo : {}).replace(/</g, '\\u003c')};
 try {
   if (localStorage.getItem('ta_lang') !== '${esc(lang)}') {
@@ -96,7 +97,8 @@ ${kind === 'app' ? `<script src="/assets/prompts.js?v=${ASSET_V}" defer></script
 
 export function htmlResponse(opts, status = 200, extraHeaders = {}) {
   const isApp = opts.kind === 'app'
-  return new Response(htmlShell(opts), {
+  const nonce = makeNonce()
+  return new Response(htmlShell({ ...opts, nonce }), {
     status,
     headers: {
       'Content-Type': 'text/html; charset=UTF-8',
@@ -109,6 +111,7 @@ export function htmlResponse(opts, status = 200, extraHeaders = {}) {
       'Referrer-Policy': 'strict-origin-when-cross-origin',
       'Permissions-Policy': 'camera=(), microphone=(self), geolocation=()',
       ...extraHeaders,
+      'Content-Security-Policy': shellCsp(nonce),
     },
   })
 }

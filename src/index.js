@@ -15,6 +15,7 @@ import {
   publicUrl,
   clampTitle,
   normalizeExtras,
+  sanitizeHttpUrl,
   LIBRARY_PREFIX,
   slugPointerKey,
   readJsonArray,
@@ -63,6 +64,7 @@ import { getRealtimeSystemTimeContext, resolveTimezone } from './time.js';
 import { mergeGuideFeed, STATIC_GUIDES, STATIC_SLUGS, HIDDEN_KEY } from './guides_feed.js';
 import { consumeMailTicket, honeypotFilled, issueMailTicket, rateMail } from './mail_gate.js';
 import { handleInternalAdmin } from './admin_internal.js';
+import { applySecurityHeaders, csrfViolation, previewFrameResponse, msConfig, msStart, msCallback, clearMsStateCookie, makeNonce } from './security.js';
 
 const APP_FROM_EMAIL = 'no-reply@trujillomingorance.com';
 const APP_SUPPORT_EMAIL = 'alberto@trujillomingorance.com';
@@ -250,19 +252,24 @@ function makeAuthResponse(data, status = 200) {
   const headers = new Headers(corsHeaders);
   headers.set('Content-Type', 'application/json');
   if (data && data.token) {
-    headers.append('Set-Cookie', `ta_session=${encodeURIComponent(data.token)}; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=2592000`);
-    headers.append('Set-Cookie', ['auth', 'token'].join('_') + `=${encodeURIComponent(data.token)}; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=2592000`);
+    headers.append('Set-Cookie', `ta_session=${encodeURIComponent(data.token)}; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
+    headers.append('Set-Cookie', ['auth', 'token'].join('_') + `=${encodeURIComponent(data.token)}; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
   }
   return new Response(JSON.stringify(data), { status, headers });
 }
 
-export default {
+const worker = {
   async scheduled(event, env, ctx) {
     const result = await runDailyOpsReport(env, { source: 'cron', cron: event && event.cron });
     console.log('daily-ops', result && result.ok ? 'ok' : (result && result.error) || 'failed');
   },
 
   async fetch(request, env, ctx) {
+    const res = await worker.route(request, env, ctx);
+    return applySecurityHeaders(request, res);
+  },
+
+  async route(request, env, ctx) {
     const url = new URL(request.url);
     const originalPath = url.pathname;
 
@@ -580,6 +587,14 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // CSRF: cookie-authenticated state changes must come from our own origins.
+    if (csrfViolation(request)) {
+      return new Response(JSON.stringify({ error: 'forbidden_origin' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      });
+    }
+
     if (url.pathname.startsWith('/assets/') && env.ASSETS) {
       const assetRes = await env.ASSETS.fetch(request);
       if (assetRes.status === 200) {
@@ -741,6 +756,51 @@ export default {
       return htmlResponse({ title: meta.title, description: meta.description, path: p.path, kind: 'site', page: p.page, lang: pageLang, urlLang: pathLang || 'es', geo }, 200, corsHeaders);
     }
 
+    // Isolated artifact preview document (opaque origin via iframe sandbox, strict CSP).
+    if (url.pathname === '/sandbox/frame' && isGetOrHead) {
+      return previewFrameResponse();
+    }
+
+    // Microsoft Entra admin sign-in (OFF until MS_CLIENT_ID / MS_TENANT_ID / MS_CLIENT_SECRET exist).
+    if (url.pathname === '/api/auth/microsoft/status' && isGetOrHead) {
+      return new Response(JSON.stringify({ enabled: msConfig(env).enabled }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      });
+    }
+    if (url.pathname === '/api/auth/microsoft/start' && isGetOrHead) {
+      return msStart(request, env, getJwtSecret(env));
+    }
+    if (url.pathname === '/api/auth/microsoft/callback' && isGetOrHead) {
+      const secure = url.protocol === 'https:';
+      const result = await msCallback(request, env, getJwtSecret(env));
+      if (result.error) {
+        console.warn('microsoft-login', result.error);
+        const h = new Headers({ Location: '/login?auth=ms_error&reason=' + encodeURIComponent(result.error), 'Cache-Control': 'no-store' });
+        h.append('Set-Cookie', clearMsStateCookie(secure));
+        return new Response(null, { status: 302, headers: h });
+      }
+      const idn = result.identity;
+      const user = await upsertSocialUser(env, { email: idn.email, name: idn.name, picture: '', provider: 'microsoft', providerId: idn.oid });
+      user.role = 'admin';
+      user.adminVia = 'microsoft';
+      user.msTenant = idn.tid;
+      await persistUserRecord(env, user);
+      const token = await generateJwtToken(user.id, user.email, getJwtSecret(env));
+      const nonce = makeNonce();
+      const data = JSON.stringify({ token, user: publicUser(user), next: result.next }).replace(/</g, '\\u003c');
+      const page = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="robots" content="noindex"><title>Entrando…</title></head><body><p>Entrando…</p><script nonce="' + nonce + '">(function(){var d=' + data + ';try{localStorage.setItem("trujillo_ai_token",d.token);localStorage.setItem("trujillo_ai_user",JSON.stringify(d.user));}catch(e){}location.replace(d.next||"/");})();</script></body></html>';
+      const h = new Headers({
+        'Content-Type': 'text/html; charset=UTF-8',
+        'Cache-Control': 'no-store',
+        'Content-Security-Policy': "default-src 'none'; script-src 'nonce-" + nonce + "'; frame-ancestors 'none'; base-uri 'none'",
+        'Referrer-Policy': 'no-referrer'
+      });
+      h.append('Set-Cookie', clearMsStateCookie(secure));
+      h.append('Set-Cookie', `ta_session=${encodeURIComponent(token)}; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
+      h.append('Set-Cookie', ['auth', 'token'].join('_') + `=${encodeURIComponent(token)}; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`);
+      return new Response(page, { status: 200, headers: h });
+    }
+
     if (url.pathname === '/api/geo' && isGetOrHead) {
       return new Response(JSON.stringify(geo), {
         headers: {
@@ -889,18 +949,35 @@ export default {
     if (url.pathname === '/api/share' && request.method === 'POST') {
       try {
         const body = await request.json();
-        const { title, messages, model, specialty } = body;
-        if (!Array.isArray(messages) || messages.length === 0) {
+        const { title, model, specialty } = body;
+        const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+        // Only plain {role, content} text is stored; the client sanitizes on render too.
+        const messages = rawMessages.slice(0, 100).map((m) => {
+          const out = {
+            role: m && m.role === 'user' ? 'user' : 'ai',
+            content: String((m && m.content) || '').slice(0, 40000)
+          };
+          if (m && Number.isFinite(m.at)) out.at = m.at;
+          if (m && Array.isArray(m.sources)) {
+            out.sources = m.sources.slice(0, 12).map((x) => ({
+              title: String((x && x.title) || '').slice(0, 160),
+              url: sanitizeHttpUrl(x && x.url)
+            })).filter((x) => x.url);
+          }
+          if (m && typeof m.image === 'string' && m.image.length < 2000000 && /^(data:image\/(png|jpe?g|gif|webp);base64,|https:\/\/)/i.test(m.image)) out.image = m.image;
+          return out;
+        }).filter((m) => m.content);
+        if (messages.length === 0) {
           return new Response(JSON.stringify({ error: 'No hay mensajes para compartir' }), { status: 400, headers: corsHeaders });
         }
 
         const shareId = 'sh_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
         const sharedPayload = {
           id: shareId,
-          title: title || 'Conversación en Trujillo AI',
-          messages: messages.slice(0, 100),
-          model: model || 'openai/gpt-oss-120b',
-          specialty: specialty || 'general',
+          title: String(title || 'Conversación en Trujillo AI').slice(0, 160),
+          messages,
+          model: String(model || 'openai/gpt-oss-120b').replace(/[^\w./:-]/g, '').slice(0, 80),
+          specialty: String(specialty || 'general').replace(/[^\w-]/g, '').slice(0, 40),
           createdAt: Date.now()
         };
 
@@ -1730,8 +1807,8 @@ export default {
     if (url.pathname === '/api/auth/logout') {
       const headers = new Headers(corsHeaders);
       headers.set('Content-Type', 'application/json');
-      headers.append('Set-Cookie', 'ta_session=; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=0');
-      headers.append('Set-Cookie', ['auth', 'token'].join('_') + '=; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=0');
+      headers.append('Set-Cookie', 'ta_session=; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
+      headers.append('Set-Cookie', ['auth', 'token'].join('_') + '=; Domain=.trujillomingorance.com; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0');
       return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
     }
 
@@ -2222,6 +2299,8 @@ export default {
     }, 404, corsHeaders);
   }
 };
+
+export default worker;
 
 // ==========================================
 // Handlers & Funciones de Apoyo
@@ -4335,7 +4414,8 @@ function publicUser(u) {
     notifyProduct: u.notifyProduct !== false,
     notifySecurity: u.notifySecurity !== false,
     notifyDigest: u.notifyDigest === true,
-    locale: u.locale || 'es'
+    locale: u.locale || 'es',
+    role: u.role === 'admin' ? 'admin' : 'user'
   };
 }
 
@@ -4585,10 +4665,18 @@ async function sendSecurityEmail(env, user, title, bodyText) {
   });
 }
 
+let EPHEMERAL_JWT_SECRET = '';
 function getJwtSecret(env) {
   if (env?.JWT_SECRET) return env.JWT_SECRET;
-  console.warn('[SECURITY WARNING] env.JWT_SECRET no configurado en Cloudflare Secrets. Configúralo con: npx wrangler secret put JWT_SECRET');
-  return 'trujillo_jwt_secret_2026';
+  // Never fall back to a fixed, public string: without JWT_SECRET, tokens only live
+  // inside this isolate (random per-isolate key), so nothing can be forged.
+  if (!EPHEMERAL_JWT_SECRET) {
+    console.warn('[SECURITY WARNING] env.JWT_SECRET no configurado; usando clave efímera por isolate.');
+    const b = new Uint8Array(32);
+    crypto.getRandomValues(b);
+    EPHEMERAL_JWT_SECRET = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+  }
+  return EPHEMERAL_JWT_SECRET;
 }
 
 function base64UrlEncode(str) {

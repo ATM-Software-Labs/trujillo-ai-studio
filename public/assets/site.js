@@ -3,6 +3,10 @@
   var root = document.getElementById('app');
   if (!root) return;
   function t(k) { return (window.TA && TA.t) ? TA.t(k) : k; }
+  function msLabel() {
+    var l = (document.documentElement.lang || 'es').slice(0, 2);
+    return l === 'en' ? 'Sign in with Microsoft' : l === 'ca' ? 'Inicia sessió amb Microsoft' : 'Iniciar sesión con Microsoft';
+  }
 
   function nav(active) {
     function item(href, label, key) {
@@ -159,6 +163,9 @@
       '<button type="button" class="btn-social" id="btn-x">' +
       '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>' +
       '<span>' + t('continueX') + '</span></button>' +
+      '<button type="button" class="btn-social btn-social-ms" id="btn-microsoft" hidden>' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="9.5" height="9.5" fill="currentColor" opacity=".9"/><rect x="12.5" y="2" width="9.5" height="9.5" fill="currentColor" opacity=".7"/><rect x="2" y="12.5" width="9.5" height="9.5" fill="currentColor" opacity=".7"/><rect x="12.5" y="12.5" width="9.5" height="9.5" fill="currentColor" opacity=".5"/></svg>' +
+      '<span>' + msLabel() + '</span></button>' +
       '</div>' +
       '<div class="auth-divider"><span>' + t('orEmail') + '</span></div>' +
       '</div>' +
@@ -228,6 +235,7 @@
     var isXCallback = urlParams.get('auth') === 'x_callback' || (urlParams.get('state') || '').indexOf('x_oauth_') === 0;
     function isAllowedReturn(url) {
       if (!url) return false;
+      if (/[\\\s]/.test(url)) return false;
       if (url.startsWith('/') && !url.startsWith('//')) return true;
       try {
         var u = new URL(url);
@@ -322,14 +330,17 @@
       localStorage.setItem('trujillo_ai_token', data.token);
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('trujillo_auth_token', data.token);
-      document.cookie = 'ta_session=' + encodeURIComponent(data.token) + '; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=2592000';
-      document.cookie = ['auth', 'token'].join('_') + '=' + encodeURIComponent(data.token) + '; Domain=.trujillomingorance.com; Path=/; Secure; SameSite=Lax; Max-Age=2592000';
+      // Session cookies are set server-side (HttpOnly) by the auth endpoints.
       localStorage.setItem('trujillo_ai_user', JSON.stringify(data.user));
       localStorage.setItem('auth_user', JSON.stringify(data.user));
       showAlert('Listo. Entrando al workspace...', true);
       if (window.opener && window.opener !== window) {
         try {
-          window.opener.postMessage({ type: 'AUTH_SUCCESS', token: data.token, user: data.user }, '*');
+          // Only deliver the token to our own origins (never '*').
+          var msg = { type: 'AUTH_SUCCESS', token: data.token, user: data.user };
+          ['https://ai.trujillomingorance.com', 'https://guides.trujillomingorance.com', 'https://trujillomingorance.com', 'https://www.trujillomingorance.com', 'https://rewrite.trujillomingorance.com', location.origin].forEach(function (o) {
+            try { window.opener.postMessage(msg, o); } catch (e) {}
+          });
           setTimeout(function () { window.close(); }, 300);
           return;
         } catch (e) {}
@@ -420,6 +431,21 @@
     };
     var xBtn = document.getElementById('btn-x');
     if (xBtn) xBtn.onclick = startXLogin;
+    // Microsoft (Entra) admin sign-in: only shown when the server has it configured.
+    var msBtn = document.getElementById('btn-microsoft');
+    if (msBtn) {
+      fetch('/api/auth/microsoft/status', { credentials: 'same-origin' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (d && d.enabled) msBtn.hidden = false;
+      }).catch(function () {});
+      msBtn.onclick = function () {
+        var nx = initialRedirect && initialRedirect.charAt(0) === '/' && isAllowedReturn(initialRedirect) ? initialRedirect : '/';
+        window.location.href = '/api/auth/microsoft/start?next=' + encodeURIComponent(nx);
+      };
+    }
+    if (urlParams.get('auth') === 'ms_error') {
+      var l2 = (document.documentElement.lang || 'es').slice(0, 2);
+      showAlert(l2 === 'en' ? 'Microsoft sign-in is restricted to authorised administrators.' : l2 === 'ca' ? "L'accés amb Microsoft està limitat als administradors autoritzats." : 'El acceso con Microsoft está limitado a administradores autorizados.');
+    }
 
     document.getElementById('form-login').onsubmit = async function (e) {
       e.preventDefault(); hideAlert();
