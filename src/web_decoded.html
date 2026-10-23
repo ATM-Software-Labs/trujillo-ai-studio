@@ -681,7 +681,7 @@
     }
     .art-dest-btn.active { background: var(--invert); color: var(--invert-fg); }
     .art-row-dest { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--blue); border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; }
-    .art-hint { font-size: 0.68rem; color: var(--dim); padding: 0 2px; line-height: 1.35; }
+    .art-hint { font-size: 0.75rem; color: var(--dim); padding: 0 2px; line-height: 1.35; }
     .topbar-action-btn:disabled,
     .topbar-action-btn:disabled:hover {
       opacity: 0.42; cursor: not-allowed; background: var(--elev); border-color: var(--line); color: var(--muted);
@@ -749,6 +749,110 @@
     }
     .follow-chip:hover { color: var(--text); border-color: var(--line-2); }
 
+/* ---- Prompt tools (prompts.js / prompt-builder.js) ---- */
+.tap-sr { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.sb-tabs.tap-5, .sb-tabs:has(#tab-prompts) { grid-template-columns: repeat(3, 1fr); }
+.sb-tabs #tab-prompts { grid-column: span 2; }
+.sb-rewrite { justify-content: flex-start; align-items: flex-start; gap: 9px; padding: 8px; }
+.sb-rewrite > svg { flex: 0 0 auto; margin-top: 2px; }
+.sb-rewrite-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.sb-rewrite-name { color: var(--text); font-weight: 650; }
+.sb-rewrite-desc { color: var(--dim); font-size: 0.75rem; font-weight: 500; line-height: 1.3; }
+.sb-rewrite-ext { opacity: 0.55; margin-top: 3px; }
+.sb-rewrite:hover .sb-rewrite-ext { opacity: 1; }
+/* composer */
+.tap-input-wrap { position: relative; }
+.tap-input-wrap .prompt-textarea { position: relative; z-index: 1; display: block; }
+.tap-mirror { position: absolute; z-index: 0; overflow: hidden; white-space: pre-wrap; overflow-wrap: break-word; word-wrap: break-word; color: transparent; pointer-events: none; box-sizing: border-box; border: 0 solid transparent; margin: 0; }
+.tap-mirror[hidden], .tap-vars[hidden] { display: none !important; }
+.tap-mark { color: transparent; background: color-mix(in srgb, var(--blue) 22%, transparent); border-radius: 4px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--blue) 45%, transparent); }
+.tap-mark.tap-cur { background: color-mix(in srgb, var(--blue) 38%, transparent); }
+.tap-vars { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--muted); }
+.tap-vars-label { font-weight: 650; }
+.tap-vars-hint { color: var(--dim); }
+.tap-var-chip { font: inherit; font-family: var(--mono); font-size: 0.7rem; background: color-mix(in srgb, var(--blue) 12%, transparent); color: var(--text); border: 1px solid color-mix(in srgb, var(--blue) 40%, transparent); border-radius: 6px; padding: 2px 7px; cursor: pointer; }
+.tap-var-chip:hover, .tap-var-chip:focus-visible { background: color-mix(in srgb, var(--blue) 24%, transparent); }
+.tap-warn { font-size: 0.76rem; line-height: 1.4; color: var(--text); background: color-mix(in srgb, #f59e0b 14%, transparent); border: 1px solid color-mix(in srgb, #f59e0b 45%, transparent); border-radius: 10px; padding: 7px 10px; }
+.tap-role-pill { position: relative; display: inline-flex; align-items: center; gap: 5px; padding-right: 6px; }
+.tap-role-pill:focus-within { outline: 2px solid var(--blue); outline-offset: 1px; }
+.tap-role-select { appearance: none; -webkit-appearance: none; background: transparent; border: 0; color: inherit; font: inherit; cursor: pointer; padding: 0 14px 0 0; max-width: 150px; text-overflow: ellipsis; outline: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 6px) 55%, calc(100% - 2px) 55%; background-size: 4px 4px; background-repeat: no-repeat; }
+.tap-role-select option { color: var(--text); background: var(--card, var(--elev)); }
+.tap-builder-pill, .tap-fav-pill { display: inline-flex; align-items: center; gap: 5px; }
+.tap-fav-pill { padding-left: 8px; padding-right: 8px; }
+.dock-pill:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+/* hero starters */
+.tap-starters { width: 100%; max-width: 680px; margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.tap-cats { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.tap-cat { background: transparent; border: 1px solid var(--line); color: var(--muted); font-size: 0.76rem; font-weight: 600; padding: 6px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.tap-cat:hover { color: var(--text); border-color: var(--line-2); }
+.tap-cat[aria-selected="true"] { background: var(--elev-2); color: var(--text); border-color: var(--line-2); }
+.tap-cat:focus-visible, .tap-starter:focus-visible, .tap-item-main:focus-visible, .tap-icon-btn:focus-visible, .tap-link-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.tap-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; outline: none; }
+.tap-starter { text-align: left; background: var(--elev); border: 1px solid var(--line); color: var(--text); border-radius: 14px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; min-width: 0; font: inherit; }
+.tap-starter:hover { border-color: var(--line-2); background: var(--elev-2); }
+.tap-starter-title { font-size: 0.875rem; font-weight: 650; }
+.tap-starter-text { font-size: 0.8125rem; color: var(--muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tap-var-ink { color: var(--blue); font-weight: 600; }
+/* sidebar prompts view */
+.tap-side { display: flex; flex-direction: column; gap: 4px; }
+.tap-side-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 8px 2px; }
+.tap-side-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); font-weight: 700; margin: 0; }
+.tap-link-btn { background: none; border: 0; color: var(--blue); font-size: 0.72rem; font-weight: 600; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.tap-list { display: flex; flex-direction: column; gap: 1px; }
+.tap-item { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+.tap-item:hover { background: rgba(127,127,127,0.12); }
+.tap-item-main { flex: 1; min-width: 0; text-align: left; background: none; border: 0; color: var(--muted); cursor: pointer; padding: 7px 8px; border-radius: 8px; display: flex; flex-direction: column; gap: 1px; font: inherit; }
+.tap-item:hover .tap-item-main { color: var(--text); }
+.tap-item-title { font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tap-item-sub { font-size: 0.68rem; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tap-item-actions { display: flex; gap: 1px; padding-right: 4px; }
+.tap-icon-btn { background: none; border: 0; color: var(--dim); width: 28px; height: 28px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.tap-icon-btn:hover { color: var(--text); background: rgba(127,127,127,0.16); }
+/* dialogs */
+.tap-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.tap-dialog.tap-wide { max-width: 920px; }
+.tap-dialog .modal-title { margin: 0; }
+.tap-dialog .modal-close-btn { width: 32px; height: 32px; border-radius: 8px; }
+.tap-col { display: flex; flex-direction: column; gap: 12px; }
+.tapb-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 18px; }
+.tapb-form { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.tapb-form input:not([type=checkbox]), .tapb-form select, .tapb-form textarea { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; }
+.tapb-form > *, .tapb-trio > * { min-width: 0; }
+.tapb-form [hidden] { display: none !important; }
+.tapb-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tapb-crit { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.tapb-crit legend { margin-bottom: 6px; padding: 0; }
+.tapb-check { font-size: 0.84rem; color: var(--text); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.tapb-check input { accent-color: var(--blue); width: 16px; height: 16px; }
+.tapb-code { font-family: var(--mono); font-size: 0.8rem; }
+.tapb-side { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tapb-preview { flex: 1; min-height: 180px; margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 0.84rem; line-height: 1.5; color: var(--text); background: var(--input, var(--elev)); border: 1px solid var(--line); border-radius: 12px; padding: 12px; overflow: auto; max-height: 52vh; }
+.tap-mark-inline { background: color-mix(in srgb, var(--blue) 22%, transparent); color: inherit; border-radius: 4px; padding: 0 2px; }
+.tapb-note { font-size: 0.72rem; color: var(--dim); margin: 0; }
+html.tap-modal-open { overflow: hidden; }
+@media (max-width: 720px) {
+  .tapb-grid { grid-template-columns: minmax(0, 1fr); }
+  .tapb-preview { min-height: 120px; max-height: 30vh; }
+  .tap-dialog { max-height: 94vh; }
+  .tap-backdrop { padding: 8px; align-items: flex-end; }
+  .tapb-trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tap-dialog .modal-footer .settings-foot-btn { min-width: 0; flex: 1 1 auto; }
+}
+@media (max-width: 640px) {
+  .tap-grid { grid-template-columns: 1fr; }
+  .tap-cats { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 2px; scrollbar-width: none; }
+  .tap-cats::-webkit-scrollbar { display: none; }
+  .tap-starter-text { -webkit-line-clamp: 1; }
+  .tap-pill-txt { display: none; }
+  .tap-role-select { max-width: 104px; }
+  .dock-controls .control-pills { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
+  .dock-controls .control-pills::-webkit-scrollbar { display: none; }
+  .dock-controls .control-pills > * { flex-shrink: 0; }
+  .dock-action-buttons { flex-shrink: 0; }
+}
+@media (hover: none) and (pointer: coarse) { .tap-vars-hint { display: none; } }
+@media (prefers-reduced-motion: reduce) { .tap-starter, .tap-cat { transition: none; } }
 </style>
 </head>
 <body>
@@ -779,15 +883,14 @@
       <button type="button" class="sb-tab" data-view="projects" id="tab-projects" data-i18n="projects">Proyectos</button>
       <button type="button" class="sb-tab" data-view="docs" id="tab-docs" data-i18n="docs">Documentos</button>
       <button type="button" class="sb-tab" data-view="artifacts" id="tab-artifacts">Arts</button>
+      <button type="button" class="sb-tab" data-view="prompts" id="tab-prompts">Prompts</button>
     </div>
     <div class="history-list" id="history-list"></div>
     <div class="sb-foot">
-      <a href="https://rewrite.trujillomingorance.com" target="_blank" rel="noopener" class="sb-link" style="display:flex;align-items:center;justify-content:space-between;text-decoration:none;">
-        <span style="display:flex;align-items:center;gap:7px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span>Rewrite AI (0% IA)</span>
-        </span>
-        <span style="font-size:0.62rem;background:rgba(56,189,248,0.15);color:var(--blue);padding:1px 6px;border-radius:4px;font-weight:700;">NUEVO</span>
+      <a href="https://rewrite.trujillomingorance.com" target="_blank" rel="noopener" class="sb-link sb-rewrite">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+        <span class="sb-rewrite-txt"><span class="sb-rewrite-name">Rewrite</span><span class="sb-rewrite-desc">Reescribe, corrige y traduce textos</span></span>
+        <svg class="sb-rewrite-ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>
       </a>
       <button type="button" id="open-connectors-btn" class="sb-link" data-i18n="connectors">Conectores</button>
       <button type="button" id="open-settings-btn" class="sb-link" data-i18n="settings" data-open-settings="pane-general">Ajustes</button>
@@ -2053,6 +2156,7 @@
         '<h1 class="hero-heading">' + t('heroTitle') + '</h1>' +
         '<p class="hero-subheading">' + t('heroSub') + '</p>' +
         '<div class="hero-chips">' + renderHeroChips() + '</div></div>';
+      if (window.TAP) { try { TAP.mountHero(); } catch (eTap) {} }
       return;
     }
     container.innerHTML = '';
@@ -2550,6 +2654,7 @@
     if (!input) return;
     var promptText = input.value.trim();
     if (!promptText && !attachedFile) return;
+    if (window.TAP && promptText && !TAP.beforeSend(promptText)) return;
     isGenerating = true;
     abortCtl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     setGenerating(true);
@@ -2621,7 +2726,7 @@
       var payload = {
           prompt: fullPrompt,
           model: selectedModel,
-          custom_prompt: [langInstr, toneInstr, customPrompt].filter(Boolean).join('\n'),
+          custom_prompt: [(window.TAP ? TAP.roleContext() : ''), langInstr, toneInstr, customPrompt].filter(Boolean).join('\n'),
           knowledge_snippets: snippets,
           search_web: isWebSearch && !pendingImage,
           chat_history: chats[currentChatId].messages.slice(-8).map(function(m) {
@@ -2634,6 +2739,7 @@
           adapt: adaptEnabled(),
           profile: adaptEnabled() ? loadLocalProfile() : undefined
         };
+      if (window.TAP) { var tapPreset = TAP.rolePreset(); if (tapPreset) payload.role_preset = tapPreset; }
       if (pendingImage) payload.image = { dataUrl: pendingImage };
       var response = await fetch('/api/chat', {
         method: 'POST',
@@ -2691,6 +2797,7 @@
       }
       chats[currentChatId].messages.push({ role: 'ai', content: fullText, sources: sources, at: Date.now() });
       saveChats();
+      if (window.TAP && fullText && promptText) { try { TAP.recordSent(promptText); } catch (eTap2) {} }
       var art = extractArtifact(fullText);
       if (art) openArtifact(art);
       if (localStorage.getItem('ta_auto_read') === '1' && fullText) {
@@ -2915,7 +3022,7 @@
 
   function setSidebarView(view) {
     sidebarView = view;
-    ['chats', 'projects', 'docs', 'artifacts'].forEach(function(v) {
+    ['chats', 'projects', 'docs', 'artifacts', 'prompts'].forEach(function(v) {
       var el = document.getElementById('tab-' + v);
       if (el) { if (v === view) el.classList.add('active'); else el.classList.remove('active'); }
     });
@@ -2931,6 +3038,7 @@
     if (sidebarView === 'projects') return renderProjectsList(list, filterText);
     if (sidebarView === 'docs') return renderDocsList(list, filterText);
     if (sidebarView === 'artifacts') return renderArtifactsList(list, filterText);
+    if (sidebarView === 'prompts') { if (window.TAP) TAP.renderSidebar(list, filterText); return; }
     renderHistoryList(list, filterText);
   }
 
