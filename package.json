@@ -8,7 +8,7 @@
   "author": "Alberto Trujillo Mingorance",
   "repository": {
     "type": "git",
-    "url": "https://github.com/atrumin16/trujillo-ai-studio.git"
+    "url": "https://github.com/ATM-Software-Labs/trujillo-ai-studio.git"
   },
   "scripts": {
     "dev": "wrangler dev",
