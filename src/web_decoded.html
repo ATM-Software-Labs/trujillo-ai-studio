@@ -838,7 +838,8 @@ html.tap-modal-open { overflow: hidden; }
   .tap-cats::-webkit-scrollbar { display: none; }
   .tap-starter-text { -webkit-line-clamp: 1; }
   .tap-pill-txt { display: none; }
-  .tap-role-select { max-width: 104px; }
+  .tap-role-select { max-width: 92px; min-width: 0; }
+  .tap-role-pill { max-width: 136px; min-width: 0; }
   .dock-controls .control-pills { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px; margin: -2px; }
   .dock-controls .control-pills::-webkit-scrollbar { display: none; }
   .dock-controls .control-pills > * { flex-shrink: 0; }
@@ -913,6 +914,151 @@ body { letter-spacing: -0.005em; }
 .connector-card { border-radius: 12px; transition: border-color .15s var(--ease); }
 .connector-card:hover { border-color: var(--line-2); }
 @media (prefers-reduced-motion: reduce) { .msg-row, .modal-backdrop.active .modal-card { animation: none; } .tap-starter:hover { transform: none; } }
+/* ---- Polish layer (v3): 4/8/12/16/24 spacing, 12/13/14 type, one accent ---- */
+:root { --fs-s: 0.75rem; --fs-m: 0.8125rem; --fs-l: 0.875rem; --blue: #9db4e8; --purple: #9db4e8; --green: #b4b4b8; --hover: rgba(127,127,127,0.10); --active: rgba(127,127,127,0.16); }
+html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f; --hover: rgba(0,0,0,0.045); --active: rgba(0,0,0,0.075); --sidebar: #f5f5f4; --bg: #fcfcfb; }
+/* sidebar */
+.ta-sidebar { background: var(--sidebar); }
+.sb-head { padding: 16px 16px 12px; }
+.brand-title { font-size: 0.9375rem; }
+.new-chat-btn { margin: 0 8px; padding: 8px; border: 0; border-radius: 8px; background: transparent; font-size: var(--fs-l); font-weight: 500; color: var(--text); min-height: 36px; }
+.new-chat-btn:hover { background: var(--hover); border-color: transparent; }
+.new-chat-btn.ghost { opacity: 1; color: var(--muted); }
+.new-chat-btn .nc-main { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.new-chat-btn .sb-ico { flex: 0 0 auto; }
+.new-chat-btn kbd.hint { font: 500 var(--fs-s)/1 var(--mono); color: var(--dim); background: none; border: 0; opacity: 0; transition: opacity .15s var(--ease); white-space: nowrap; }
+.new-chat-btn:hover kbd.hint, .new-chat-btn:focus-visible kbd.hint { opacity: 1; }
+#new-chat-btn { margin-top: 4px; }
+.history-search-box { padding: 8px 8px 8px; }
+.history-search-input { font-size: var(--fs-l); padding: 8px 12px; border-radius: 8px; background: transparent; border-color: var(--line); }
+.sb-tabs, .sb-tabs.tap-5, .sb-tabs:has(#tab-prompts) { display: flex; flex-direction: column; gap: 0; padding: 0 8px 8px; overflow: visible; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.sb-tabs .sb-tab, .sb-tabs #tab-prompts { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 8px; min-height: 36px; font-size: var(--fs-l); font-weight: 500; color: var(--muted); border-radius: 8px; letter-spacing: 0; }
+.sb-tabs .sb-tab:hover { background: var(--hover); color: var(--text); }
+.sb-tabs .sb-tab.active { background: var(--active); color: var(--text); }
+.sb-tabs .sb-tab .sb-ico { flex: 0 0 auto; opacity: .9; }
+.history-list { padding: 4px 8px 8px; gap: 0; }
+.history-section-title { font-size: var(--fs-s); font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dim); padding: 12px 8px 4px; }
+.history-item, .doc-item, .proj-item { font-size: var(--fs-l); padding: 8px; min-height: 36px; color: var(--muted); }
+.history-item:hover, .doc-item:hover, .proj-item:hover { background: var(--hover); }
+.history-item.active, .proj-item.active { background: var(--active); font-weight: 500; }
+.empty-side { font-size: var(--fs-m); color: var(--dim); padding: 12px 8px; line-height: 1.45; }
+.hist-bar { display: flex; padding: 0 0 4px; }
+.hist-bar-btn { background: none; border: 0; color: var(--dim); font: inherit; font-size: var(--fs-s); padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.hist-bar-btn:hover { color: var(--text); background: var(--hover); }
+.tap-side-head { padding: 12px 8px 4px; }
+.tap-side-title { font-size: var(--fs-s); font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--dim); }
+.tap-link-btn { font-size: var(--fs-s); color: var(--muted); font-weight: 500; }
+.tap-link-btn:hover { color: var(--text); background: var(--hover); }
+.tap-item-title { font-size: var(--fs-l); }
+.tap-item-sub { font-size: var(--fs-s); }
+.sb-foot { padding: 8px; gap: 0; border-top: 1px solid var(--line); }
+.sb-link { padding: 8px; gap: 12px; min-height: 36px; font-size: var(--fs-l); font-weight: 500; }
+.sb-link:hover { background: var(--hover); }
+.sb-account { display: flex; align-items: center; gap: 4px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.sb-account .user-pill { flex: 1 1 auto; min-width: 0; border: 0; background: transparent; padding: 8px; border-radius: 8px; }
+.sb-account .user-pill:hover { background: var(--hover); }
+.user-info-name { font-size: var(--fs-l); font-weight: 500; }
+.user-info-tier { font-size: var(--fs-s); color: var(--dim); }
+.sb-account .lang-picker { flex: 0 0 auto; width: auto; margin: 0; position: static; }
+.sb-account .lang-picker-btn { width: auto; border: 0; background: transparent; color: var(--muted); font-size: var(--fs-m); padding: 8px; border-radius: 8px; gap: 4px; }
+.sb-account .lang-picker-btn::before { content: ""; width: 16px; height: 16px; flex: 0 0 auto; background: currentColor; -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7'><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/></svg>") center/contain no-repeat; mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7'><circle cx='12' cy='12' r='9'/><path d='M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18'/></svg>") center/contain no-repeat; }
+.sb-account .lang-picker-btn:hover { background: var(--hover); color: var(--text); }
+.sb-account .lang-picker-btn .lang-opt-name { max-width: 64px; }
+.sb-foot { position: relative; }
+.sb-account .lang-menu { left: 8px; right: 8px; bottom: calc(100% - 4px); }
+.avatar-letter { font-size: var(--fs-s); }
+/* top bar */
+.topbar-right { gap: 4px; }
+.topbar-icon-btn { width: 32px; height: 32px; border-radius: 8px; border: 0; }
+.topbar-icon-btn:hover { background: var(--hover); border-color: transparent; }
+.topbar-icon-btn svg { width: 16px; height: 16px; }
+#topbar-auth-btn.primary { background: transparent; color: var(--text); border: 1px solid var(--line-2); font-size: var(--fs-m); font-weight: 500; padding: 6px 12px; min-height: 32px; margin-left: 4px; }
+#topbar-auth-btn.primary:hover { background: var(--hover); opacity: 1; }
+.model-picker-btn { font-size: var(--fs-l); }
+.topbar-action-btn { font-size: var(--fs-m); }
+/* hero + starters */
+.ta-hero { gap: 12px; padding-top: 24px; }
+.hero-heading { font-size: clamp(1.75rem, 3.4vw, 2.25rem); }
+.hero-subheading { font-size: var(--fs-l); }
+.tap-starters { max-width: 720px; margin-top: 16px; gap: 12px; }
+.tap-cats { gap: 4px; }
+.tap-cat { font-size: var(--fs-m); font-weight: 500; padding: 6px 12px; border-color: transparent; color: var(--muted); }
+.tap-cat:hover { background: var(--hover); border-color: transparent; }
+.tap-cat[aria-selected="true"] { background: var(--active); border-color: transparent; }
+.tap-grid { gap: 8px; }
+.tap-starter { padding: 12px 16px; gap: 4px; background: transparent; border-color: var(--line); }
+.tap-starter:hover { background: var(--hover); border-color: var(--line-2); transform: none; }
+.tap-starter-title { font-size: var(--fs-l); font-weight: 500; }
+.tap-starter-text { font-size: var(--fs-m); color: var(--dim); }
+.tap-var-ink { color: var(--muted); font-weight: 500; background: var(--active); border-radius: 4px; padding: 0 4px; }
+/* composer */
+.ta-input-dock { padding: 8px 16px max(12px, env(safe-area-inset-bottom, 12px)); }
+.capsule-box { max-width: 720px; padding: 12px 12px 8px; gap: 8px; border-radius: 20px; background: var(--elev); }
+.prompt-textarea { font-size: 0.9375rem; padding: 0 4px; }
+.dock-controls { gap: 4px; position: relative; }
+.dock-plus { position: relative; flex: 0 0 auto; }
+.dock-plus-btn { width: 32px; height: 32px; border: 1px solid var(--line); }
+.dock-plus-btn[aria-expanded="true"] { background: var(--active); color: var(--text); }
+.dock-plus-menu { position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 40; min-width: 232px; padding: 4px; background: var(--elev); border: 1px solid var(--line-2); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.28); animation: taPop .14s var(--ease) both; }
+.dock-plus-menu[hidden] { display: none; }
+.dpm-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 12px; min-height: 36px; border: 0; border-radius: 8px; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-l); text-align: left; cursor: pointer; }
+.dpm-item:hover, .dpm-item:focus-visible { background: var(--hover); outline: none; }
+.dpm-item .sb-ico { color: var(--muted); }
+.dpm-label { flex: 1 1 auto; }
+.dpm-check { color: var(--blue); visibility: hidden; font-size: var(--fs-m); }
+.dpm-item[aria-checked="true"] .dpm-check { visibility: visible; }
+.dpm-sep { height: 1px; background: var(--line); margin: 4px 8px; }
+#quick-connectors-pill, #attach-file-btn { display: none !important; }
+#web-search-pill:not(.active), #image-gen-pill:not(.active-purple) { display: none; }
+.dock-pill { font-size: var(--fs-m); font-weight: 500; padding: 6px 12px; min-height: 32px; display: inline-flex; align-items: center; gap: 4px; border-color: var(--line); color: var(--muted); }
+.dock-pill.active, .dock-pill.active-purple { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 40%, transparent); background: color-mix(in srgb, var(--blue) 10%, transparent); }
+.dock-pill.active::after, .dock-pill.active-purple::after { content: "×"; margin-left: 2px; opacity: .7; }
+.tap-role-pill { padding: 6px 8px 6px 12px; }
+.tap-role-select { font-size: var(--fs-m); max-width: 132px; }
+.tap-fav-pill { width: 32px; height: 32px; padding: 0; justify-content: center; border-color: transparent; border-radius: 50%; }
+.tap-fav-pill:hover { border-color: transparent; background: var(--hover); }
+.dock-action-buttons { gap: 4px; }
+.dock-btn { width: 32px; height: 32px; }
+.send-submit-btn { width: 32px; height: 32px; }
+.disclaimer { font-size: var(--fs-s); color: var(--dim); margin-top: 8px; line-height: 1.5; }
+.disclaimer a, .disclaimer .linkish { color: var(--muted); }
+/* builder & prompt dialogs: one primary action */
+.tap-dialog .modal-header { padding: 16px 24px; }
+.tap-dialog .modal-body, .tap-dialog .tap-col, .tap-dialog .tapb-grid { gap: 16px; }
+.tap-dialog .modal-footer { padding: 12px 24px; gap: 8px; }
+.tap-dialog .modal-footer .settings-foot-btn { flex: 0 0 auto; min-height: 36px; padding: 8px 16px; font-size: var(--fs-l); font-weight: 500; border-radius: 8px; }
+.tap-dialog .modal-footer .settings-foot-btn:not(.primary) { background: transparent; border-color: transparent; color: var(--muted); }
+.tap-dialog .modal-footer .settings-foot-btn:not(.primary):hover { background: var(--hover); color: var(--text); }
+.tap-dialog .modal-footer .settings-foot-btn:first-child { margin-right: auto; }
+.tap-dialog label, .tap-dialog legend, .tap-dialog .form-label { font-size: var(--fs-s); font-weight: 500; color: var(--muted); letter-spacing: 0; text-transform: none; }
+.tap-dialog input:not([type=checkbox]), .tap-dialog textarea, .tap-dialog select { font-size: var(--fs-l); background: var(--input); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; color: var(--text); min-height: 38px; transition: border-color .15s var(--ease), box-shadow .15s var(--ease); }
+.tap-dialog input:not([type=checkbox]):focus, .tap-dialog textarea:focus, .tap-dialog select:focus { outline: none; border-color: var(--line-2); box-shadow: 0 0 0 3px rgba(127,127,127,0.12); }
+.tap-dialog select { appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2396969e' stroke-width='2.2' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; }
+.tapb-preview { background: var(--bg); border-color: var(--line); border-radius: 12px; padding: 16px; font-size: var(--fs-l); min-height: 160px; max-height: 44vh; }
+.tapb-note { font-size: var(--fs-s); }
+.accent-dot.accent-auto { background: linear-gradient(135deg, #9db4e8 50%, #3a5ba0 50%); }
+.tap-side-head { gap: 8px; } .tap-side-head .tap-link-btn { white-space: nowrap; flex: 0 0 auto; } .tap-side-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* focus ring: one accent */
+.sb-link:focus-visible, .sb-tab:focus-visible, .new-chat-btn:focus-visible, .history-item:focus-visible, .dock-pill:focus-visible, .dock-btn:focus-visible, .topbar-icon-btn:focus-visible, .tap-cat:focus-visible, .tap-starter:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+@media (max-width: 720px) {
+  .tap-pill-txt { display: none; }
+  .tap-builder-pill { width: 32px; height: 32px; padding: 0; justify-content: center; }
+  #speak-last-btn { display: none; }
+  .tap-role-select { max-width: 104px; }
+  .disc-opt { display: none; }
+  .disclaimer { margin-top: 4px; }
+  .capsule-box { border-radius: 18px; padding: 8px 8px 8px; }
+  .new-chat-btn kbd.hint { display: none; }
+  .tap-cats { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); padding-right: 24px; }
+  .tap-cats::-webkit-scrollbar { display: none; }
+  .tap-dialog .modal-header, .tap-dialog .modal-footer { padding-left: 16px; padding-right: 16px; }
+  .tap-dialog .modal-footer { gap: 4px; flex-wrap: nowrap; }
+  .tap-dialog .modal-footer .settings-foot-btn { padding: 8px 10px; font-size: var(--fs-m); }
+}
+@media (max-width: 480px) {
+  .dock-pill { font-size: var(--fs-m); padding: 6px 10px; }
+  .dock-btn, .send-submit-btn { width: 32px; height: 32px; }
+}
 </style>
 </head>
 <body>
@@ -928,22 +1074,22 @@ body { letter-spacing: -0.005em; }
       <button id="sidebar-close-btn" class="icon-btn" title="Cerrar" style="display:none">✕</button>
     </div>
     <button id="new-chat-btn" class="new-chat-btn" type="button">
-      <span>+ <span data-i18n="newChat">Nueva conversación</span></span>
-      <span class="hint">⌘K</span>
+      <span class="nc-main"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 8 16l1.2-4z"/></svg><span data-i18n="newChat">Nueva conversación</span></span>
+      <kbd class="hint">Ctrl K</kbd>
     </button>
     <button id="temp-chat-btn" class="new-chat-btn ghost" type="button">
-      <span data-i18n="tempChat">Chat temporal</span>
-      <span class="hint">⌘⇧N</span>
+      <span class="nc-main"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/><path d="M12 7v5l3 2"/></svg><span data-i18n="tempChat">Chat temporal</span></span>
+      <kbd class="hint">Ctrl ⇧ N</kbd>
     </button>
     <div class="history-search-box">
       <input type="search" id="history-search" class="history-search-input" placeholder="Buscar…" autocomplete="off" data-i18n="searchPh" data-i18n-attr="placeholder">
     </div>
     <div class="sb-tabs">
-      <button type="button" class="sb-tab active" data-view="chats" id="tab-chats" data-i18n="chats">Chats</button>
-      <button type="button" class="sb-tab" data-view="projects" id="tab-projects" data-i18n="projects">Proyectos</button>
-      <button type="button" class="sb-tab" data-view="docs" id="tab-docs" data-i18n="docs">Documentos</button>
-      <button type="button" class="sb-tab" data-view="artifacts" id="tab-artifacts">Arts</button>
-      <button type="button" class="sb-tab" data-view="prompts" id="tab-prompts">Prompts</button>
+      <button type="button" class="sb-tab active" data-view="chats" id="tab-chats"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span data-i18n="chats">Chats</span></button>
+      <button type="button" class="sb-tab" data-view="projects" id="tab-projects"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span data-i18n="projects">Proyectos</span></button>
+      <button type="button" class="sb-tab" data-view="docs" id="tab-docs"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg><span data-i18n="docs">Documentos</span></button>
+      <button type="button" class="sb-tab" data-view="artifacts" id="tab-artifacts"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9l-2.5 3L9 15M15 9l2.5 3L15 15"/></svg><span>Artifacts</span></button>
+      <button type="button" class="sb-tab" data-view="prompts" id="tab-prompts"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M4 6h16M4 12h10M4 18h7"/><path d="m17 15 3 3-3 3"/></svg><span>Prompts</span></button>
     </div>
     <div class="history-list" id="history-list"></div>
     <div class="sb-foot">
@@ -951,7 +1097,7 @@ body { letter-spacing: -0.005em; }
       <button type="button" id="open-rewrite-btn" class="sb-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span>Rewrite</span></button>
       <button type="button" id="open-settings-btn" class="sb-link" data-open-settings="pane-general"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="settings">Ajustes</span></button>
       <a href="/docs" class="sb-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5V21h16"/></svg><span data-i18n="docsLink">Documentación</span></a>
-      <div id="lang-select" class="lang-picker" aria-label="Language"></div>
+      <div class="sb-account">
       <button type="button" class="user-pill" id="user-profile-pill" data-open-settings="pane-account">
         <div style="display:flex;align-items:center;gap:8px;min-width:0">
           <div class="avatar-letter" id="user-letter">T</div>
@@ -961,6 +1107,8 @@ body { letter-spacing: -0.005em; }
           </div>
         </div>
       </button>
+      <div id="lang-select" class="lang-picker" aria-label="Language"></div>
+      </div>
     </div>
   </aside>
 
@@ -1008,6 +1156,16 @@ body { letter-spacing: -0.005em; }
         </div>
         <textarea id="prompt-input" class="prompt-textarea" rows="1" placeholder="Pregunta lo que quieras…" data-i18n="askPh" data-i18n-attr="placeholder"></textarea>
         <div class="dock-controls">
+          <div class="dock-plus" id="dock-plus">
+            <button type="button" class="dock-btn dock-plus-btn" id="dock-plus-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="dock-plus-menu" aria-label="Más opciones" title="Más opciones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+            <div class="dock-plus-menu" id="dock-plus-menu" role="menu" hidden>
+              <button type="button" role="menuitem" class="dpm-item" data-dpm="attach"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg><span class="dpm-label">Adjuntar archivo</span></button>
+              <button type="button" role="menuitemcheckbox" aria-checked="false" class="dpm-item" data-dpm="web"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span class="dpm-label">Buscar en la web</span><span class="dpm-check" aria-hidden="true">✓</span></button>
+              <button type="button" role="menuitemcheckbox" aria-checked="false" class="dpm-item" data-dpm="image"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg><span class="dpm-label">Crear imagen</span><span class="dpm-check" aria-hidden="true">✓</span></button>
+              <div class="dpm-sep" role="separator"></div>
+              <button type="button" role="menuitem" class="dpm-item" data-dpm="connectors"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="sb-ico"><path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 0 1-12 0z"/><path d="M12 17v5"/></svg><span class="dpm-label">Conectores</span></button>
+            </div>
+          </div>
           <div class="control-pills">
             <button id="web-search-pill" class="dock-pill" type="button" data-i18n="searchWeb">Buscar</button>
             <button id="image-gen-pill" class="dock-pill" type="button" data-i18n="image">Imagen</button>
@@ -1031,7 +1189,7 @@ body { letter-spacing: -0.005em; }
           </div>
         </div>
       </div>
-      <p class="disclaimer"><span data-i18n="disclaimer">Trujillo AI puede equivocarse.</span> <a href="/docs" data-i18n="docsLink">Documentación</a> · <a href="/privacy-policy" data-i18n="privacy">Privacidad</a> · <button type="button" id="open-ideas-btn" class="linkish" data-i18n="ideas" style="background:none;border:0;color:inherit;cursor:pointer;text-decoration:underline;font:inherit;padding:0">Sugerir una función</button></p>
+      <p class="disclaimer"><span data-i18n="disclaimer">Trujillo AI puede equivocarse.</span> <span class="disc-opt"><a href="/docs" data-i18n="docsLink">Documentación</a> · </span><a href="/privacy-policy" data-i18n="privacy">Privacidad</a><span class="disc-opt"> · <button type="button" id="open-ideas-btn" class="linkish" data-i18n="ideas" style="background:none;border:0;color:inherit;cursor:pointer;text-decoration:underline;font:inherit;padding:0">Sugerir una función</button></span></p>
     </footer>
   </main>
 
@@ -1313,6 +1471,7 @@ body { letter-spacing: -0.005em; }
           <div class="form-group">
             <label class="form-label" data-i18n="accentLabel">Acento</label>
             <div class="accent-row">
+              <button type="button" class="accent-dot accent-auto" data-pref="ta_accent" data-value="auto" title="Neutro" aria-label="Neutro"></button>
               <button type="button" class="accent-dot" data-pref="ta_accent" data-value="#38bdf8" style="background:#38bdf8" title="Cielo"></button>
               <button type="button" class="accent-dot" data-pref="ta_accent" data-value="#a1a1aa" style="background:#a1a1aa" title="Gris"></button>
               <button type="button" class="accent-dot" data-pref="ta_accent" data-value="#34d399" style="background:#34d399" title="Menta"></button>
@@ -1670,7 +1829,7 @@ body { letter-spacing: -0.005em; }
   };
   function t(k) { return (window.TA && TA.t) ? TA.t(k) : k; }
   var THEME_COLORS = { dark: '#000000', gray: '#18181b', dim: '#0d1117', navy: '#0b1220', light: '#f4f4f5', paper: '#f4efe6', hacker: '#000000', cyberpunk: '#0d021a', sunset: '#1f101d', ocean: '#061325', forest: '#07130e', rose: '#fff1f2', lavender: '#f8f6fc' };
-  var ACCENT_OK = { '#38bdf8': 1, '#a1a1aa': 1, '#34d399': 1, '#2dd4bf': 1, '#818cf8': 1, '#a78bfa': 1, '#f59e0b': 1, '#fb7185': 1 };
+  var ACCENT_OK = { 'auto': 1, '#38bdf8': 1, '#a1a1aa': 1, '#34d399': 1, '#2dd4bf': 1, '#818cf8': 1, '#a78bfa': 1, '#f59e0b': 1, '#fb7185': 1 };
   function applyAppearance() {
     var theme = localStorage.getItem('ta_theme') || 'dark';
     var resolved = theme;
@@ -1678,10 +1837,11 @@ body { letter-spacing: -0.005em; }
       resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
     }
     if (!THEME_COLORS[resolved]) resolved = 'dark';
-    var accent = localStorage.getItem('ta_accent') || '#38bdf8';
-    if (!ACCENT_OK[accent]) accent = '#38bdf8';
+    var accent = localStorage.getItem('ta_accent') || 'auto';
+    if (!ACCENT_OK[accent]) accent = 'auto';
     document.documentElement.setAttribute('data-theme', resolved);
-    document.documentElement.style.setProperty('--blue', accent);
+    if (accent === 'auto') document.documentElement.style.removeProperty('--blue');
+    else document.documentElement.style.setProperty('--blue', accent);
     document.documentElement.setAttribute('data-font', localStorage.getItem('ta_font') || 'md');
     document.documentElement.classList.toggle('compact-sb', localStorage.getItem('ta_compact_sb') === '1');
     document.documentElement.classList.toggle('reduce-motion', localStorage.getItem('ta_reduce_motion') === '1');
@@ -3007,6 +3167,7 @@ body { letter-spacing: -0.005em; }
       } else el.textContent = t(k);
     });
     try { if (window.TAP && TAP.localizeRewrite) TAP.localizeRewrite(); } catch (e) {}
+    try { localizeDockMenu(); } catch (e) {}
     renderModelPicker();
     var chat = chats[currentChatId];
     if (!chat || !chat.messages || !chat.messages.length) loadChatView();
@@ -3121,6 +3282,68 @@ body { letter-spacing: -0.005em; }
     ['corto', 'normal', 'extendido'].forEach(function(m) {
       var btn = document.getElementById('len-btn-' + m);
       if (btn) { if (m === mode) btn.classList.add('active'); else btn.classList.remove('active'); }
+    });
+  }
+  var DPM_I18N = {
+    es: { more: 'Más opciones', attach: 'Adjuntar archivo', web: 'Buscar en la web', image: 'Crear imagen', connectors: 'Conectores' },
+    en: { more: 'More options', attach: 'Attach a file', web: 'Search the web', image: 'Create an image', connectors: 'Connectors' },
+    ca: { more: 'Més opcions', attach: 'Adjunta un fitxer', web: 'Cerca al web', image: 'Crea una imatge', connectors: 'Connectors' }
+  };
+  function localizeDockMenu() {
+    var l = String(document.documentElement.lang || 'es').slice(0, 2);
+    var d = DPM_I18N[l] || DPM_I18N.es;
+    document.querySelectorAll('.dpm-item').forEach(function(it) {
+      var lab = it.querySelector('.dpm-label');
+      if (lab) lab.textContent = d[it.getAttribute('data-dpm')] || lab.textContent;
+    });
+    var b = document.getElementById('dock-plus-btn');
+    if (b) { b.title = d.more; b.setAttribute('aria-label', d.more); }
+  }
+  function syncDockMenu() {
+    var w = document.querySelector('.dpm-item[data-dpm="web"]');
+    var im = document.querySelector('.dpm-item[data-dpm="image"]');
+    if (w) w.setAttribute('aria-checked', isWebSearch ? 'true' : 'false');
+    if (im) im.setAttribute('aria-checked', isImageMode ? 'true' : 'false');
+    var dc = document.querySelector('.dock-controls');
+    if (dc) dc.classList.toggle('has-mode', !!(isWebSearch || isImageMode));
+  }
+  function setDockMenu(open) {
+    var m = document.getElementById('dock-plus-menu');
+    var b = document.getElementById('dock-plus-btn');
+    if (!m || !b) return;
+    m.hidden = !open;
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { syncDockMenu(); var f = m.querySelector('.dpm-item'); if (f) f.focus(); }
+  }
+  function initDockMenu() {
+    var b = document.getElementById('dock-plus-btn');
+    var m = document.getElementById('dock-plus-menu');
+    if (!b || !m) return;
+    localizeDockMenu();
+    b.addEventListener('click', function(e) { e.stopPropagation(); setDockMenu(m.hidden); });
+    m.addEventListener('click', function(e) {
+      var it = e.target.closest('.dpm-item');
+      if (!it) return;
+      var k = it.getAttribute('data-dpm');
+      setDockMenu(false);
+      var map = { attach: 'attach-file-btn', web: 'web-search-pill', image: 'image-gen-pill', connectors: 'quick-connectors-pill' };
+      var tgt = document.getElementById(map[k]);
+      if (tgt) tgt.click();
+      syncDockMenu();
+      if (k !== 'attach' && k !== 'connectors') b.focus();
+    });
+    m.addEventListener('keydown', function(e) {
+      var items = Array.prototype.slice.call(m.querySelectorAll('.dpm-item'));
+      var i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setDockMenu(false); b.focus(); }
+      else if (e.key === 'Tab') { setDockMenu(false); }
+    });
+    document.addEventListener('click', function(e) { if (!m.hidden && !e.target.closest('#dock-plus')) setDockMenu(false); });
+    ['web-search-pill', 'image-gen-pill'].forEach(function(id) {
+      var p = document.getElementById(id);
+      if (p) p.addEventListener('click', function() { setTimeout(syncDockMenu, 0); });
     });
   }
   function toggleWebSearch() {
@@ -3329,11 +3552,13 @@ body { letter-spacing: -0.005em; }
       return true;
     });
     var archCount = Object.keys(chats).filter(function(k) { return chats[k] && chats[k].archived; }).length;
-    var archBar = document.createElement('div');
-    archBar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:0 8px 8px';
-    archBar.innerHTML = '<button type="button" class="mini-x" id="toggle-archived" style="opacity:1">' +
-      (showArchived ? t('chats') : t('archived') + (archCount ? ' (' + archCount + ')' : '')) + '</button>';
-    list.appendChild(archBar);
+    if (archCount || showArchived) {
+      var archBar = document.createElement('div');
+      archBar.className = 'hist-bar';
+      archBar.innerHTML = '<button type="button" class="hist-bar-btn" id="toggle-archived">' +
+        (showArchived ? '← ' + t('chats') : t('archived') + (archCount ? ' (' + archCount + ')' : '')) + '</button>';
+      list.appendChild(archBar);
+    }
     if (currentProjectId) {
       var proj = projects.find(function(p) { return p.id === currentProjectId; });
       var bar = document.createElement('div');
@@ -3820,7 +4045,7 @@ body { letter-spacing: -0.005em; }
     pullProfile();
     if (ephEl) ephEl.checked = localStorage.getItem('ta_ephemeral') === '1';
     setChoice('ta_theme', localStorage.getItem('ta_theme') || 'dark');
-    setChoice('ta_accent', localStorage.getItem('ta_accent') || '#38bdf8');
+    setChoice('ta_accent', localStorage.getItem('ta_accent') || 'auto');
     setChoice('ta_font', localStorage.getItem('ta_font') || 'md');
     setChoice('ta_len_mode', localStorage.getItem('ta_len_mode') || 'normal');
     setChoice('ta_tone', localStorage.getItem('ta_tone') || 'auto');
@@ -4253,6 +4478,7 @@ body { letter-spacing: -0.005em; }
     if (webSearchPill) webSearchPill.addEventListener('click', toggleWebSearch);
     var imageGenPill = document.getElementById('image-gen-pill');
     if (imageGenPill) imageGenPill.addEventListener('click', toggleImageMode);
+    initDockMenu();
     var attachFileBtn = document.getElementById('attach-file-btn');
     var fileUploader = document.getElementById('file-uploader');
     if (attachFileBtn && fileUploader) {
@@ -4522,6 +4748,8 @@ body { letter-spacing: -0.005em; }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'n') { e.preventDefault(); startTempChat(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); startNewChat(); }
       if (e.key === 'Escape') {
+        var openM = document.querySelectorAll('.modal-backdrop.active');
+        if (openM.length) { openM[openM.length - 1].classList.remove('active'); return; }
         closeCommandPalette();
         closeArtifact();
         var p = document.getElementById('model-picker');
