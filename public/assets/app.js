@@ -72,6 +72,10 @@
     if (!Array.isArray(projects)) projects = [];
   } catch(e) { projects = []; }
   var currentProjectId = null;
+  try {
+    var savedProj = localStorage.getItem('ta_project_active');
+    if (savedProj && projects.some(function(p) { return p && p.id === savedProj; })) currentProjectId = savedProj;
+  } catch(eAp) {}
   var sidebarView = 'chats';
   var publishedArtifacts = [];
   var abortCtl = null;
@@ -688,11 +692,16 @@
     var chat = chats[currentChatId];
     if (!chat || !Array.isArray(chat.messages) || chat.messages.length === 0) {
       container.innerHTML = '<div class="ta-hero">' +
+        projectHeroHtml() +
         '<img src="/avatar.png" alt="Trujillo AI" class="hero-logo-img">' +
         '<h1 class="hero-heading">' + t('heroTitle') + '</h1>' +
         '<p class="hero-subheading">' + t('heroSub') + '</p>' +
         '<div class="hero-chips">' + renderHeroChips() + '</div></div>';
       if (window.TAP) { try { TAP.mountHero(); } catch (eTap) {} }
+      var phEdit = document.getElementById('proj-hero-edit');
+      if (phEdit) phEdit.onclick = function() { var cp = projectById(currentProjectId); if (cp) openProjectModal(cp); };
+      var phExit = document.getElementById('proj-hero-exit');
+      if (phExit) phExit.onclick = function() { switchProject(null); };
       return;
     }
     container.innerHTML = '';
@@ -1412,7 +1421,7 @@
       if (localStorage.getItem('ta_use_docs') !== '0') {
         snippets = documents.filter(function(d) {
           return !currentProjectId || d.projectId === currentProjectId || !d.projectId;
-        }).slice(-6).map(function(d) { return { title: d.title, content: String(d.content || '').slice(0, 2500) }; });
+        }).sort(function(x, y) { return (x.projectId === currentProjectId ? 1 : 0) - (y.projectId === currentProjectId ? 1 : 0); }).slice(-6).map(function(d) { return { title: d.title, content: String(d.content || '').slice(0, 2500) }; });
       }
       var langInstr = t('replyLang');
       var toneInstr = TONES[localStorage.getItem('ta_tone') || 'auto'] || '';
@@ -1423,7 +1432,7 @@
       var payload = {
           prompt: fullPrompt,
           model: selectedModel,
-          custom_prompt: [(window.TAP ? TAP.roleContext() : ''), langInstr, toneInstr, customPrompt].filter(Boolean).join('\n'),
+          custom_prompt: [projectContext(), (window.TAP ? TAP.roleContext() : ''), langInstr, toneInstr, customPrompt].filter(Boolean).join('\n'),
           knowledge_snippets: snippets,
           search_web: isWebSearch && !pendingImage,
           chat_history: chats[currentChatId].messages.slice(-8).map(function(m) {
@@ -1973,9 +1982,9 @@
     if (currentProjectId) {
       var proj = projects.find(function(p) { return p.id === currentProjectId; });
       var bar = document.createElement('div');
-      bar.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:4px 8px 8px';
-      bar.innerHTML = '<span style="font-size:0.75rem;color:var(--muted)">Proyecto: ' + escapeHtml((proj && proj.name) || '—') + '</span>' +
-        '<button type="button" class="mini-x" id="clear-project-filter" style="opacity:1">ver todos</button>';
+      bar.className = 'proj-bar';
+      bar.innerHTML = PROJ_ICON + '<span class="proj-bar-name">' + escapeHtml((proj && proj.name) || '—') + '</span>' +
+        '<button type="button" class="hist-bar-btn" id="clear-project-filter">' + escapeHtml(pt('exit')) + '</button>';
       list.appendChild(bar);
     }
     if (!keys.length) {
@@ -2033,45 +2042,247 @@
     });
   }
 
+  var PROJ_ICON = '<svg class="proj-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2.5h7.5A2.5 2.5 0 0 1 21 10v6.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z"/></svg>';
+  var PROJ_EDIT_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>';
+  var PROJ_DEL_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+  var PROJ_I18N = {
+    es: { emptyTitle: 'Aún no hay proyectos', newProject: 'Nuevo proyecto', editProject: 'Editar proyecto', name: 'Nombre', namePh: 'Ej.: Lanzamiento de la web', desc: 'Descripción', descPh: '¿De qué trata este proyecto?', instr: 'Instrucciones', instrPh: 'Cómo debe responder el asistente en este proyecto: contexto, tono, formato…', role: 'Rol por defecto', files: 'Archivos', filesHint: 'Texto, Markdown, CSV, JSON o código · máx. 200 KB por archivo. Se usan como contexto en los chats del proyecto.', addFiles: 'Añadir archivos', noFiles: 'Sin archivos todavía', remove: 'Quitar', cancel: 'Cancelar', save: 'Guardar', create: 'Crear proyecto', del: 'Eliminar', delTitle: '¿Eliminar el proyecto?', delBody: 'Se eliminarán «{n}» y sus archivos. Las conversaciones se conservan, sin proyecto.', edit: 'Editar', exit: 'Salir', label: 'Proyecto', chatsN: '{n} chats', chat1: '1 chat', filesN: '{n} archivos', file1: '1 archivo', empty: 'Agrupa chats, instrucciones y archivos por tema.', nameReq: 'Ponle un nombre al proyecto.', tooBig: '{f}: demasiado grande (máx. 200 KB)', notText: '{f}: formato no compatible', created: 'Proyecto creado', saved: 'Proyecto guardado', deleted: 'Proyecto eliminado', switched: 'Proyecto activo: {n}', left: 'Sin proyecto activo', ctxHead: 'Contexto del proyecto «{n}»', instrHead: 'Instrucciones del proyecto' },
+    en: { emptyTitle: 'No projects yet', newProject: 'New project', editProject: 'Edit project', name: 'Name', namePh: 'e.g. Website launch', desc: 'Description', descPh: 'What is this project about?', instr: 'Instructions', instrPh: 'How the assistant should answer in this project: context, tone, format…', role: 'Default role', files: 'Files', filesHint: 'Text, Markdown, CSV, JSON or code · max 200 KB per file. Used as context in this project’s chats.', addFiles: 'Add files', noFiles: 'No files yet', remove: 'Remove', cancel: 'Cancel', save: 'Save', create: 'Create project', del: 'Delete', delTitle: 'Delete project?', delBody: '“{n}” and its files will be deleted. Conversations are kept, without a project.', edit: 'Edit', exit: 'Exit', label: 'Project', chatsN: '{n} chats', chat1: '1 chat', filesN: '{n} files', file1: '1 file', empty: 'Group chats, instructions and files by topic.', nameReq: 'Give the project a name.', tooBig: '{f}: too large (max 200 KB)', notText: '{f}: unsupported format', created: 'Project created', saved: 'Project saved', deleted: 'Project deleted', switched: 'Active project: {n}', left: 'No active project', ctxHead: 'Context for project “{n}”', instrHead: 'Project instructions' },
+    ca: { emptyTitle: 'Encara no hi ha projectes', newProject: 'Nou projecte', editProject: 'Edita el projecte', name: 'Nom', namePh: 'P. ex.: Llançament del web', desc: 'Descripció', descPh: 'De què tracta aquest projecte?', instr: 'Instruccions', instrPh: 'Com ha de respondre l’assistent en aquest projecte: context, to, format…', role: 'Rol per defecte', files: 'Fitxers', filesHint: 'Text, Markdown, CSV, JSON o codi · màx. 200 KB per fitxer. S’usen com a context als xats del projecte.', addFiles: 'Afegeix fitxers', noFiles: 'Encara no hi ha fitxers', remove: 'Treu', cancel: 'Cancel·la', save: 'Desa', create: 'Crea el projecte', del: 'Elimina', delTitle: 'Vols eliminar el projecte?', delBody: 'S’eliminaran «{n}» i els seus fitxers. Les converses es conserven, sense projecte.', edit: 'Edita', exit: 'Surt', label: 'Projecte', chatsN: '{n} xats', chat1: '1 xat', filesN: '{n} fitxers', file1: '1 fitxer', empty: 'Agrupa xats, instruccions i fitxers per tema.', nameReq: 'Posa un nom al projecte.', tooBig: '{f}: massa gran (màx. 200 KB)', notText: '{f}: format no compatible', created: 'Projecte creat', saved: 'Projecte desat', deleted: 'Projecte eliminat', switched: 'Projecte actiu: {n}', left: 'Cap projecte actiu', ctxHead: 'Context del projecte «{n}»', instrHead: 'Instruccions del projecte' }
+  };
+  function pt(k) {
+    var l = (window.TA && TA.lang) ? TA.lang() : 'es';
+    var d = PROJ_I18N[l] || PROJ_I18N[l === 'es' || l === 'ca' ? l : 'en'] || PROJ_I18N.en;
+    return d[k] != null ? d[k] : PROJ_I18N.en[k];
+  }
+  function projectById(id) { if (!id) return null; for (var i = 0; i < projects.length; i++) if (projects[i] && projects[i].id === id) return projects[i]; return null; }
+  function projectDocs(id) { return documents.filter(function(d) { return d.projectId === id; }); }
+  function projCount(n, one, many) { return n === 1 ? pt(one) : pt(many).replace('{n}', n); }
+  function projAnnounce(msg) { try { if (window.TAP && TAP._ && TAP._.announce) TAP._.announce(msg); } catch(eA) {} }
+  function projectContext() {
+    var p = projectById(currentProjectId);
+    if (!p) return '';
+    var parts = [pt('ctxHead').replace('{n}', p.name)];
+    if (p.description) parts.push(String(p.description).slice(0, 300));
+    if (p.instructions) parts.push(pt('instrHead') + ':\n' + String(p.instructions).slice(0, 4000));
+    return parts.join('\n');
+  }
+  function projectHeroHtml() {
+    var p = projectById(currentProjectId);
+    if (!p) return '';
+    return '<div class="proj-hero">' + PROJ_ICON + '<span class="proj-hero-label">' + escapeHtml(pt('label')) + '</span>' +
+      '<strong class="proj-hero-name">' + escapeHtml(p.name) + '</strong>' +
+      '<button type="button" class="hist-bar-btn" id="proj-hero-edit">' + escapeHtml(pt('edit')) + '</button>' +
+      '<button type="button" class="hist-bar-btn" id="proj-hero-exit">' + escapeHtml(pt('exit')) + '</button></div>';
+  }
+  function switchProject(id) {
+    var p = projectById(id);
+    currentProjectId = p ? p.id : null;
+    try { if (currentProjectId) localStorage.setItem('ta_project_active', currentProjectId); else localStorage.removeItem('ta_project_active'); } catch(eS) {}
+    if (p && p.role && window.TAP && TAP._ && TAP._.setRole) { try { TAP._.setRole(p.role); } catch(eR) {} }
+    var cur = chats[currentChatId];
+    if (p && cur && Array.isArray(cur.messages) && cur.messages.length && cur.projectId !== p.id) {
+      currentChatId = Date.now().toString();
+    }
+    sidebarView = 'chats';
+    setSidebarView('chats');
+    var c2 = chats[currentChatId];
+    if (!c2 || !c2.messages || !c2.messages.length) loadChatView();
+    projAnnounce(p ? pt('switched').replace('{n}', p.name) : pt('left'));
+  }
+
   function renderProjectsList(list, filterText) {
     var head = document.createElement('button');
     head.type = 'button';
-    head.className = 'new-chat-btn';
-    head.style.margin = '4px 4px 10px';
-    head.innerHTML = '<span>+ ' + t('newProject') + '</span>';
-    head.onclick = createProject;
+    head.className = 'new-chat-btn proj-new-btn';
+    head.id = 'new-project-btn';
+    head.innerHTML = '<span class="nc-main"><svg class="nc-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>' + escapeHtml(pt('newProject')) + '</span></span>';
+    head.onclick = function() { openProjectModal(null); };
     list.appendChild(head);
-    var filtered = projects.filter(function(p) { return !filterText || (p.name || '').toLowerCase().includes(filterText); });
+    var filtered = projects.filter(function(p) {
+      if (!p) return false;
+      if (!filterText) return true;
+      return ((p.name || '') + ' ' + (p.description || '')).toLowerCase().includes(filterText);
+    });
     if (!filtered.length) {
       var emptyP = document.createElement('div');
-      emptyP.className = 'empty-side';
-      emptyP.textContent = t('noProjects');
+      emptyP.className = 'empty-side proj-empty';
+      emptyP.innerHTML = '<strong>' + escapeHtml(pt('emptyTitle')) + '</strong><span>' + escapeHtml(pt('empty')) + '</span>';
       list.appendChild(emptyP);
       return;
     }
+    var wrap = document.createElement('div');
+    wrap.className = 'proj-cards';
+    wrap.setAttribute('role', 'list');
     filtered.forEach(function(p) {
-      var count = Object.keys(chats).filter(function(k) { return chats[k].projectId === p.id; }).length;
-      var item = document.createElement('div');
-      item.className = 'proj-item' + (currentProjectId === p.id ? ' active' : '');
-      item.innerHTML = '<span class="history-title">' + escapeHtml(p.name) + ' · ' + count + '</span>' +
-        '<button class="mini-x" data-del-proj="' + p.id + '">✕</button>';
-      item.onclick = function(e) {
-        if (e.target.getAttribute('data-del-proj')) {
-          var id = e.target.getAttribute('data-del-proj');
-          projects = projects.filter(function(x) { return x.id !== id; });
-          Object.keys(chats).forEach(function(k) { if (chats[k].projectId === id) chats[k].projectId = null; });
-          documents.forEach(function(d) { if (d.projectId === id) d.projectId = null; });
-          if (currentProjectId === id) currentProjectId = null;
-          saveProjects(); saveChats(); saveDocuments();
-          renderSidebar();
-          return;
-        }
-        currentProjectId = p.id;
-        sidebarView = 'chats';
-        setSidebarView('chats');
-      };
-      list.appendChild(item);
+      var nChats = Object.keys(chats).filter(function(k) { return chats[k] && chats[k].projectId === p.id; }).length;
+      var nFiles = projectDocs(p.id).length;
+      var active = currentProjectId === p.id;
+      var card = document.createElement('div');
+      card.className = 'proj-card' + (active ? ' active' : '');
+      card.setAttribute('role', 'listitem');
+      card.setAttribute('data-proj', p.id);
+      var main = document.createElement('button');
+      main.type = 'button';
+      main.className = 'proj-card-main';
+      if (active) main.setAttribute('aria-current', 'true');
+      main.innerHTML = '<span class="proj-card-ico">' + PROJ_ICON + '</span><span class="proj-card-body">' +
+        '<span class="proj-card-name">' + escapeHtml(p.name) + '</span>' +
+        (p.description ? '<span class="proj-card-desc">' + escapeHtml(p.description) + '</span>' : '') +
+        '<span class="proj-card-meta">' + escapeHtml(projCount(nChats, 'chat1', 'chatsN') + ' · ' + projCount(nFiles, 'file1', 'filesN')) + '</span></span>';
+      main.onclick = function() { switchProject(p.id); if (window.innerWidth <= 860) toggleSidebar(false); };
+      var acts = document.createElement('div');
+      acts.className = 'proj-card-acts';
+      var eb = document.createElement('button');
+      eb.type = 'button'; eb.className = 'proj-act'; eb.setAttribute('data-proj-edit', p.id);
+      eb.setAttribute('aria-label', pt('edit') + ': ' + p.name); eb.title = pt('edit');
+      eb.innerHTML = PROJ_EDIT_ICON;
+      eb.onclick = function(e) { e.stopPropagation(); openProjectModal(p); };
+      var db = document.createElement('button');
+      db.type = 'button'; db.className = 'proj-act'; db.setAttribute('data-proj-del', p.id);
+      db.setAttribute('aria-label', pt('del') + ': ' + p.name); db.title = pt('del');
+      db.innerHTML = PROJ_DEL_ICON;
+      db.onclick = function(e) { e.stopPropagation(); confirmDeleteProject(p); };
+      acts.appendChild(eb); acts.appendChild(db);
+      card.appendChild(main); card.appendChild(acts);
+      wrap.appendChild(card);
     });
+    list.appendChild(wrap);
+  }
+
+  function deleteProject(id) {
+    projects = projects.filter(function(x) { return x && x.id !== id; });
+    Object.keys(chats).forEach(function(k) { if (chats[k] && chats[k].projectId === id) chats[k].projectId = null; });
+    documents = documents.filter(function(d) { return d.projectId !== id; });
+    if (currentProjectId === id) { currentProjectId = null; try { localStorage.removeItem('ta_project_active'); } catch(eD) {} }
+    saveProjects(); saveChats(); saveDocuments();
+    renderSidebar();
+    var c = chats[currentChatId];
+    if (!c || !c.messages || !c.messages.length) loadChatView();
+    var nb = document.getElementById('new-project-btn'); if (nb && sidebarView === 'projects') nb.focus();
+    projAnnounce(pt('deleted'));
+  }
+
+  function confirmDeleteProject(p) {
+    if (!(window.TAP && TAP._ && TAP._.dialog)) { if (window.confirm(pt('delTitle'))) deleteProject(p.id); return; }
+    var U = TAP._;
+    var d;
+    var cancel = U.btn(pt('cancel'), '', function() { d.close(); });
+    var del = U.btn(pt('del'), 'primary danger', function() { d.close('ok'); deleteProject(p.id); });
+    del.id = 'proj-del-confirm';
+    d = U.dialog({
+      title: pt('delTitle'),
+      body: U.el('p', { class: 'proj-del-body', text: pt('delBody').replace('{n}', p.name) }),
+      buttons: [cancel, del],
+      initialFocus: cancel,
+      returnFocus: document.getElementById('tab-projects') || undefined
+    });
+    d.card.classList.add('proj-dialog-sm');
+  }
+
+  var PROJ_TEXT_EXT = /\.(txt|md|markdown|csv|tsv|json|html?|css|js|mjs|ts|tsx|jsx|py|rb|go|rs|java|c|cpp|h|sh|xml|ya?ml|toml|ini|sql|log)$/i;
+  function openProjectModal(p) {
+    if (!(window.TAP && TAP._ && TAP._.dialog)) {
+      var nm = prompt(t('projName'));
+      if (!nm || !nm.trim()) return;
+      var np = { id: 'p_' + Date.now(), name: nm.trim().slice(0, 60), description: '', instructions: '', role: '', created: Date.now() };
+      projects.unshift(np); saveProjects(); switchProject(np.id);
+      return;
+    }
+    var U = TAP._;
+    var editing = !!p;
+    var name = U.el('input', { class: 'form-input', type: 'text', maxlength: '60', placeholder: pt('namePh'), autocomplete: 'off', id: 'proj-f-name', required: true });
+    var desc = U.el('textarea', { class: 'form-textarea proj-desc', rows: '2', maxlength: '300', placeholder: pt('descPh'), id: 'proj-f-desc' });
+    var instr = U.el('textarea', { class: 'form-textarea', rows: '5', maxlength: '4000', placeholder: pt('instrPh'), id: 'proj-f-instr' });
+    var role = U.el('select', { class: 'form-input proj-role', id: 'proj-f-role' });
+    var roleList = [];
+    try { roleList = (U.roles() || []).filter(function(r) { return r.id !== 'custom'; }); } catch(eRl) {}
+    roleList.forEach(function(r) { role.appendChild(U.el('option', { value: r.id === 'none' ? '' : r.id, text: r.name })); });
+    if (editing) { name.value = p.name || ''; desc.value = p.description || ''; instr.value = p.instructions || ''; role.value = p.role || ''; }
+    var err = U.el('p', { class: 'proj-err', role: 'alert', id: 'proj-f-err' });
+    var keep = editing ? projectDocs(p.id).map(function(d) { return { id: d.id, title: d.title, size: String(d.content || '').length }; }) : [];
+    var removed = {};
+    var added = [];
+    var fileList = U.el('ul', { class: 'proj-files', id: 'proj-f-files' });
+    function paintFiles() {
+      fileList.innerHTML = '';
+      var items = keep.filter(function(f) { return !removed[f.id]; }).concat(added);
+      if (!items.length) { fileList.appendChild(U.el('li', { class: 'proj-file-empty', text: pt('noFiles') })); return; }
+      items.forEach(function(f) {
+        var kb = Math.max(1, Math.round((f.size || 0) / 1024)) + ' KB';
+        var x = U.el('button', { type: 'button', class: 'proj-file-x', 'aria-label': pt('remove') + ': ' + f.title, title: pt('remove'), text: '✕', onclick: function() {
+          if (f.id) removed[f.id] = true; else added = added.filter(function(a) { return a !== f; });
+          paintFiles();
+        } });
+        fileList.appendChild(U.el('li', { class: 'proj-file' }, [U.el('span', { class: 'proj-file-name', text: f.title }), U.el('span', { class: 'proj-file-size', text: kb }), x]));
+      });
+    }
+    paintFiles();
+    var picker = U.el('input', { type: 'file', multiple: true, class: 'proj-file-input', id: 'proj-f-input', tabindex: '-1', 'aria-hidden': 'true',
+      accept: '.txt,.md,.markdown,.csv,.tsv,.json,.html,.htm,.css,.js,.mjs,.ts,.tsx,.jsx,.py,.rb,.go,.rs,.java,.c,.cpp,.h,.sh,.xml,.yaml,.yml,.toml,.ini,.sql,.log,text/*' });
+    picker.addEventListener('change', function() {
+      var fs = Array.prototype.slice.call(picker.files || []);
+      var msgs = [];
+      var jobs = fs.map(function(f) {
+        if (f.size > 200 * 1024) { msgs.push(pt('tooBig').replace('{f}', f.name)); return Promise.resolve(); }
+        if (!(PROJ_TEXT_EXT.test(f.name) || /^text\//.test(f.type || ''))) { msgs.push(pt('notText').replace('{f}', f.name)); return Promise.resolve(); }
+        return f.text().then(function(txt) {
+          if (txt.indexOf('\u0000') !== -1) { msgs.push(pt('notText').replace('{f}', f.name)); return; }
+          added.push({ title: f.name.slice(0, 120), content: txt.slice(0, 20000), size: Math.min(txt.length, 20000), lang: (f.name.split('.').pop() || '').toLowerCase() });
+        }).catch(function() { msgs.push(pt('notText').replace('{f}', f.name)); });
+      });
+      Promise.all(jobs).then(function() { picker.value = ''; err.textContent = msgs.join(' · '); paintFiles(); });
+    });
+    var addBtn = U.el('button', { type: 'button', class: 'settings-foot-btn proj-add-files', id: 'proj-f-add', text: '+ ' + pt('addFiles'), onclick: function() { picker.click(); } });
+    var filesGroup = U.el('div', { class: 'form-group proj-files-group' }, [
+      U.el('span', { class: 'form-label', id: 'proj-f-files-l', text: pt('files') }),
+      U.el('p', { class: 'proj-hint', text: pt('filesHint') }),
+      fileList, addBtn, picker
+    ]);
+    fileList.setAttribute('aria-labelledby', 'proj-f-files-l');
+    var rowTop = U.el('div', { class: 'proj-row' }, [U.field(pt('name'), name), roleList.length ? U.field(pt('role'), role) : null]);
+    var body = U.el('div', { class: 'proj-form' }, [rowTop, U.field(pt('desc'), desc), U.field(pt('instr'), instr), filesGroup, err]);
+    var d;
+    function save() {
+      var n = name.value.trim();
+      if (!n) { err.textContent = pt('nameReq'); name.setAttribute('aria-invalid', 'true'); name.focus(); return; }
+      var obj = editing ? p : { id: 'p_' + Date.now() + Math.random().toString(36).slice(2, 6), created: Date.now() };
+      obj.name = n.slice(0, 60);
+      obj.description = desc.value.trim().slice(0, 300);
+      obj.instructions = instr.value.trim().slice(0, 4000);
+      obj.role = role.value || '';
+      obj.updated = Date.now();
+      if (!editing) projects.unshift(obj);
+      documents = documents.filter(function(x) { return !removed[x.id]; });
+      added.forEach(function(f, i) {
+        documents.push({ id: 'doc_' + Date.now() + '_' + i, title: f.title, content: f.content, type: 'file', lang: f.lang, created: Date.now(), projectId: obj.id });
+      });
+      while (documents.length > 40) {
+        var idx = documents.findIndex(function(x) { return !x.projectId; });
+        documents.splice(idx === -1 ? 0 : idx, 1);
+      }
+      saveProjects(); saveDocuments();
+      d.close('ok');
+      if (!editing) { switchProject(obj.id); if (window.innerWidth <= 860) toggleSidebar(false); }
+      else {
+        if (currentProjectId === obj.id && obj.role && window.TAP && TAP._ && TAP._.setRole) { try { TAP._.setRole(obj.role); } catch(eR2) {} }
+        renderSidebar();
+        var cc = chats[currentChatId];
+        if (!cc || !cc.messages || !cc.messages.length) loadChatView();
+      }
+      projAnnounce(editing ? pt('saved') : pt('created'));
+    }
+    var saveBtn = U.btn(editing ? pt('save') : pt('create'), 'primary', save);
+    saveBtn.id = 'proj-f-save';
+    var buttons = [U.btn(pt('cancel'), 'proj-cancel', function() { d.close(); }), saveBtn];
+    if (editing) {
+      var delBtn = U.btn(pt('del'), 'proj-del-link', function() { d.close('del'); confirmDeleteProject(p); });
+      buttons.unshift(delBtn);
+    }
+    name.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); save(); } });
+    d = U.dialog({ title: editing ? pt('editProject') : pt('newProject'), body: body, buttons: buttons, initialFocus: name, wide: false });
+    d.card.classList.add('proj-dialog');
+    d.card.id = 'proj-dialog';
   }
 
   function renderDocsList(list, filterText) {
@@ -2112,16 +2323,7 @@
     });
   }
 
-  function createProject() {
-    var name = prompt(t('projName'));
-    if (!name || !name.trim()) return;
-    var p = { id: 'p_' + Date.now(), name: name.trim(), created: Date.now() };
-    projects.unshift(p);
-    currentProjectId = p.id;
-    saveProjects();
-    sidebarView = 'chats';
-    setSidebarView('chats');
-  }
+  function createProject() { openProjectModal(null); }
 
   function addDocument(doc) {
     documents.push({
@@ -2133,7 +2335,10 @@
       created: Date.now(),
       projectId: currentProjectId
     });
-    while (documents.length > 20) documents.shift();
+    while (documents.length > 40) {
+      var evict = documents.findIndex(function(x) { return !x.projectId; });
+      documents.splice(evict === -1 ? 0 : evict, 1);
+    }
     saveDocuments();
   }
 
@@ -3150,7 +3355,7 @@
       if (modelOpt) { setModel(modelOpt.getAttribute('data-model')); return; }
       var pickerEl = document.getElementById('model-picker');
       if (pickerEl && !pickerEl.contains(e.target)) pickerEl.classList.remove('open');
-      if (e.target && e.target.id === 'clear-project-filter') { currentProjectId = null; renderSidebar(); return; }
+      if (e.target && e.target.id === 'clear-project-filter') { switchProject(null); return; }
       if (e.target && e.target.id === 'toggle-archived') { showArchived = !showArchived; renderSidebar(); return; }
       var closeBtn = e.target.closest('[data-modal]');
       if (closeBtn && closeBtn.tagName === 'BUTTON') { var mId = closeBtn.getAttribute('data-modal'); if (mId) closeModal(mId); return; }

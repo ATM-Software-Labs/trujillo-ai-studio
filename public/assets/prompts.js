@@ -734,7 +734,7 @@
     init: init, mountHero: mountHero, beforeSend: beforeSend, roleContext: roleContext, rolePreset: rolePreset,
     recordSent: recordSent, renderSidebar: renderSidebar, openBuilder: openBuilder, insertPrompt: insertPrompt,
     findVars: findVars, refresh: refresh, localizeRewrite: localizeRewrite,
-    _: { s: s, lang: lang, roles: roles, currentRoleId: currentRoleId, roleById: roleById, dialog: dialog, btn: btn, field: field, el: el, esc: esc, openFavDialog: openFavDialog, input: input, announce: announce }
+    _: { s: s, lang: lang, roles: roles, currentRoleId: currentRoleId, roleById: roleById, dialog: dialog, setRole: setRole, btn: btn, field: field, el: el, esc: esc, openFavDialog: openFavDialog, input: input, announce: announce }
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
