@@ -695,6 +695,22 @@
     .art-preview { flex: 1 1 48%; min-height: 0; width: 100%; border: 0; background: #fff; }
     .art-preview[hidden] { display: none !important; }
     .art-split.no-preview .art-editor { border-bottom: 0; flex: 1 1 auto; }
+    .art-split .art-editor, .art-split .art-preview { flex: 1 1 auto; height: 100%; border-bottom: 0; }
+    .art-split.view-code .art-preview { display: none !important; }
+    .art-split.view-preview .art-editor { display: none; }
+    .art-viewbar { display: flex; align-items: center; gap: 6px; }
+    .art-viewbar-spacer { flex: 1 1 auto; }
+    .art-view { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+    .art-view-btn { border: 0; background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 8px; font-size: 0.76rem; font-weight: 600; cursor: pointer; min-height: 30px; font-family: inherit; }
+    .art-view-btn.active { background: var(--elev-2, var(--elev)); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+    .art-view-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .art-version { min-width: 0; max-width: 150px; }
+    .art-icon-btn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; }
+    .art-panel.open.fs { position: fixed; inset: 0; width: 100vw; max-width: none; min-width: 0; flex-basis: 100vw; z-index: 70; border-left: 0; box-shadow: none; }
+    .art-chip { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--elev); color: var(--text); font: inherit; font-size: 0.85rem; cursor: pointer; max-width: 100%; text-align: left; }
+    .art-chip:hover { border-color: var(--line-2); background: var(--elev-2, var(--elev)); }
+    .art-chip-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .art-chip-kind { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
     .modal-backdrop {
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 80;
       align-items: center; justify-content: center; padding: 16px;
@@ -1038,6 +1054,14 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
 .tapb-note { font-size: var(--fs-s); }
 .accent-dot.accent-auto { background: linear-gradient(135deg, #9db4e8 50%, #3a5ba0 50%); }
 .tap-side-head { gap: 8px; } .tap-side-head .tap-link-btn { white-space: nowrap; flex: 0 0 auto; } .tap-side-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.art-panel .topbar-action-btn { font-size: var(--fs-m); font-weight: 500; min-height: 32px; padding: 6px 12px; border-radius: 8px; }
+.art-panel .topbar-action-btn:not(.primary) { background: transparent; border-color: var(--line); }
+.art-panel .topbar-action-btn:not(.primary):hover { background: var(--hover); }
+.art-panel .topbar-action-btn:disabled { display: none; }
+.art-panel .art-hint, .art-panel .art-extras-toggle { font-size: var(--fs-s); color: var(--dim); }
+.art-panel .art-title-input { font-size: 0.9375rem; font-weight: 600; }
+body:has(.art-panel.open) .tap-pill-txt, body:has(.art-panel.open) .disc-opt { display: none; }
+body:has(.art-panel.open) .tap-builder-pill { width: 32px; padding: 0; justify-content: center; }
 /* focus ring: one accent */
 .sb-link:focus-visible, .sb-tab:focus-visible, .new-chat-btn:focus-visible, .history-item:focus-visible, .dock-pill:focus-visible, .dock-btn:focus-visible, .topbar-icon-btn:focus-visible, .tap-cat:focus-visible, .tap-starter:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 @media (max-width: 720px) {
@@ -1208,11 +1232,21 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
           <button type="button" class="art-dest-btn active" data-dest="artifact" id="dest-artifact-btn">Library</button>
           <button type="button" class="art-dest-btn" data-dest="guide" id="dest-guide-btn">Guides</button>
         </div>
-        <button type="button" class="topbar-action-btn" id="art-copy-btn">Copiar</button>
+        <button type="button" class="topbar-action-btn" id="art-copy-btn" data-art-i18n="copy">Copiar</button>
         <button type="button" class="topbar-action-btn" id="art-save-btn">Guardar</button>
         <button type="button" class="topbar-action-btn primary" id="art-publish-btn">Publicar</button>
         <button type="button" class="topbar-action-btn" id="art-open-btn">Abrir</button>
         <button type="button" class="topbar-action-btn" id="art-unpublish-btn">Despublicar</button>
+      </div>
+      <div class="art-viewbar">
+        <div class="art-view" role="tablist" aria-label="Vista">
+          <button type="button" class="art-view-btn active" role="tab" aria-selected="true" data-view="preview" id="art-view-preview" data-art-i18n="preview">Vista previa</button>
+          <button type="button" class="art-view-btn" role="tab" aria-selected="false" data-view="code" id="art-view-code" data-art-i18n="code">Código</button>
+        </div>
+        <select id="art-version" class="art-format art-version" aria-label="Versión" hidden></select>
+        <span class="art-viewbar-spacer"></span>
+        <button type="button" class="icon-btn art-icon-btn" id="art-download-btn" data-art-i18n-title="download" title="Descargar" aria-label="Descargar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg></button>
+        <button type="button" class="icon-btn art-icon-btn" id="art-fs-btn" data-art-i18n-title="fullscreen" title="Pantalla completa" aria-label="Pantalla completa" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/></svg></button>
       </div>
       <p class="art-hint" id="art-dest-hint">La IA deja una base. Elige Artifact o Guides. Hace falta una cuenta registrada; no se mezcla con el de otros.</p>
     </div>
@@ -2434,7 +2468,13 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
     container.innerHTML = '';
     chat.messages.forEach(function(m, i) {
       if (m && m.content) {
-        try { addMessageToDOM(m.role, m.content, m.sources, m.at, i, m.feedback, m.image); } catch(e) {}
+        try {
+          var refs = addMessageToDOM(m.role, m.content, m.sources, m.at, i, m.feedback, m.image);
+          if (m.role !== 'user' && refs && refs.contentCol) {
+            var hArt = extractArtifact(m.content);
+            if (hArt) appendArtifactChip(refs.contentCol, hArt);
+          }
+        } catch(e) {}
       }
     });
     scrollToEnd();
@@ -2573,16 +2613,31 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
 
   function extractArtifact(markdown) {
     if (!markdown) return null;
-    var best = null;
-    var re = /```([a-zA-Z0-9_-]*)\r?\n([\s\S]*?)```/g;
+    var cands = [];
+    var re = /```([a-zA-Z0-9_+-]*)[^\n]*\r?\n([\s\S]*?)(?:```|$(?![\s\S]))/g;
     var m;
     while ((m = re.exec(markdown))) {
-      var body = m[2] || '';
-      if (body.split('\n').length >= 10 || body.length > 360) {
-        if (!best || body.length > best.content.length) {
-          best = { lang: (m[1] || 'text').trim() || 'text', content: body, title: guessArtTitle(m[1], body) };
-        }
+      var body = (m[2] || '').replace(/\s+$/, '');
+      var lang = (m[1] || 'text').trim() || 'text';
+      var kind = artifactKind({ lang: lang, content: body });
+      var rich = kind === 'html' || kind === 'svg' || kind === 'mermaid';
+      if (body.split('\n').length >= 10 || body.length > 360 || (rich && body.length > 80)) {
+        cands.push({ lang: lang, content: body, rich: rich, title: guessArtTitle(lang, body) });
       }
+      if (m[0].length === 0) re.lastIndex++;
+    }
+    var best = null;
+    cands.forEach(function(c) {
+      if (!best || (c.rich && !best.rich) || (c.rich === best.rich && c.content.length > best.content.length)) best = c;
+    });
+    if (best) {
+      var heading = (markdown.match(/^#{1,3}\s+(.+)/m) || [])[1];
+      if (heading && /^[<!{\[]/.test((best.title || '').trim())) best.title = clampArtTitle(heading);
+      if (/^(<!doctype|<html)/i.test(best.title || '')) {
+        var tt = best.content.match(/<title[^>]*>([^<]{1,120})<\/title>/i);
+        best.title = clampArtTitle(tt ? tt[1] : (heading || 'HTML · Trujillo'));
+      }
+      delete best.rich;
     }
     if (!best && /^#\s+.+/m.test(markdown) && markdown.length > 500) {
       best = { lang: 'markdown', content: markdown, title: clampArtTitle((markdown.match(/^#\s+(.+)/m) || [,'Documento'])[1]) };
@@ -2771,9 +2826,120 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
       }
     }
   });
+  var artView = 'preview';
+  var ART_I18N = {
+    es: { preview: 'Vista previa', code: 'Código', download: 'Descargar', fullscreen: 'Pantalla completa', exitfs: 'Salir de pantalla completa', copied: 'Copiado', copy: 'Copiar', version: 'Versión', open: 'Abrir artifact' },
+    en: { preview: 'Preview', code: 'Code', download: 'Download', fullscreen: 'Full screen', exitfs: 'Exit full screen', copied: 'Copied', copy: 'Copy', version: 'Version', open: 'Open artifact' },
+    ca: { preview: 'Vista prèvia', code: 'Codi', download: 'Baixa', fullscreen: 'Pantalla completa', exitfs: 'Surt de pantalla completa', copied: 'Copiat', copy: 'Copia', version: 'Versió', open: 'Obre l\'artifact' }
+  };
+  function artT(k) {
+    var l = String(document.documentElement.lang || 'es').slice(0, 2);
+    var d = ART_I18N[l] || ART_I18N.es;
+    return d[k] || ART_I18N.es[k] || k;
+  }
+  function localizeArtPanel() {
+    document.querySelectorAll('[data-art-i18n]').forEach(function(el) { el.textContent = artT(el.getAttribute('data-art-i18n')); });
+    document.querySelectorAll('[data-art-i18n-title]').forEach(function(el) {
+      var v = artT(el.getAttribute('data-art-i18n-title'));
+      el.title = v; el.setAttribute('aria-label', v);
+    });
+    var vs = document.getElementById('art-version');
+    if (vs) vs.setAttribute('aria-label', artT('version'));
+    var fs = document.getElementById('art-fs-btn');
+    var panel = document.getElementById('art-panel');
+    if (fs && panel && panel.classList.contains('fs')) { fs.title = artT('exitfs'); fs.setAttribute('aria-label', artT('exitfs')); }
+  }
+  function artIsLive(kind) {
+    return kind === 'html' || kind === 'svg' || kind === 'mermaid' || kind === 'markdown' || kind === 'json' || kind === 'csv' || kind === 'plaintext';
+  }
+  function setArtView(view) {
+    var live = artIsLive(artifactKind(currentArtifact));
+    artView = (view === 'code' || !live) ? 'code' : 'preview';
+    var split = document.getElementById('art-split');
+    if (split) {
+      split.classList.toggle('view-code', artView === 'code');
+      split.classList.toggle('view-preview', artView === 'preview');
+    }
+    document.querySelectorAll('.art-view-btn').forEach(function(b) {
+      var on = b.getAttribute('data-view') === artView;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      if (b.getAttribute('data-view') === 'preview') b.disabled = !live;
+    });
+    if (artView === 'preview') {
+      if (artPreviewTimer) { clearTimeout(artPreviewTimer); artPreviewTimer = 0; }
+      readArtifactDraft();
+      refreshArtifactPreview();
+    }
+  }
+  function artPushVersion(art, content) {
+    if (!art) return;
+    if (!Array.isArray(art.versions)) art.versions = [];
+    var last = art.versions[art.versions.length - 1];
+    if (last && last.content === content) return;
+    art.versions.push({ at: Date.now(), content: content });
+    if (art.versions.length > 20) art.versions.shift();
+  }
+  function renderArtVersions() {
+    var sel = document.getElementById('art-version');
+    if (!sel) return;
+    var vs = (currentArtifact && currentArtifact.versions) || [];
+    sel.hidden = vs.length < 2;
+    sel.innerHTML = '';
+    vs.forEach(function(v, i) {
+      var o = document.createElement('option');
+      o.value = String(i);
+      var d = new Date(v.at);
+      o.textContent = 'v' + (i + 1) + ' · ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+      sel.appendChild(o);
+    });
+    var cur = currentArtifact ? currentArtifact.content : '';
+    var idx = vs.length - 1;
+    for (var i = vs.length - 1; i >= 0; i--) { if (vs[i].content === cur) { idx = i; break; } }
+    if (vs.length) sel.value = String(idx);
+  }
+  var ART_EXT = { html: ['html', 'text/html'], svg: ['svg', 'image/svg+xml'], markdown: ['md', 'text/markdown'], json: ['json', 'application/json'], csv: ['csv', 'text/csv'], mermaid: ['mmd', 'text/plain'], python: ['py', 'text/x-python'], javascript: ['js', 'text/javascript'], plaintext: ['txt', 'text/plain'], code: ['txt', 'text/plain'] };
+  function downloadArtifact() {
+    readArtifactDraft();
+    if (!currentArtifact) return;
+    var kind = artifactKind(currentArtifact);
+    var ext = ART_EXT[kind] || ['txt', 'text/plain'];
+    var name = (slugifyArtifact(currentArtifact.title) || 'artifact') + '.' + ext[0];
+    var blob = new Blob([currentArtifact.content || ''], { type: ext[1] + ';charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1500);
+  }
+  function setArtFullscreen(on) {
+    var panel = document.getElementById('art-panel');
+    var btn = document.getElementById('art-fs-btn');
+    if (!panel) return;
+    panel.classList.toggle('fs', !!on);
+    if (btn) {
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var v = artT(on ? 'exitfs' : 'fullscreen');
+      btn.title = v; btn.setAttribute('aria-label', v);
+    }
+  }
+  function appendArtifactChip(container, art) {
+    if (!container || !art) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'art-chip';
+    var kind = artifactKind(art);
+    b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>' +
+      '<span class="art-chip-title"></span><span class="art-chip-kind"></span>';
+    b.querySelector('.art-chip-title').textContent = art.title || 'Artifact';
+    b.querySelector('.art-chip-kind').textContent = kind;
+    b.setAttribute('aria-label', artT('open') + ': ' + (art.title || 'Artifact'));
+    b.addEventListener('click', function() { openArtifact(art); });
+    container.appendChild(b);
+  }
   function refreshArtifactPreview() {
     var kind = artifactKind(currentArtifact);
-    var live = kind === 'html' || kind === 'svg' || kind === 'mermaid' || kind === 'markdown' || kind === 'json' || kind === 'csv' || kind === 'plaintext';
+    var live = artIsLive(kind);
     var preview = document.getElementById('art-preview');
     var split = document.getElementById('art-split');
     if (split) split.classList.toggle('no-preview', !live);
@@ -2784,6 +2950,7 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
       return;
     }
     preview.hidden = false;
+    if (artView === 'code') { setPreviewFrame(preview, ''); return; }
     setPreviewFrame(preview, artPreviewSrcdoc(kind, (currentArtifact && currentArtifact.content) || ''));
   }
   function scheduleArtifactPreview() {
@@ -2843,7 +3010,11 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
     fillArtExtras(currentArtifact.extras);
     updateTitleCount();
     if (sel) sel.value = kind;
-    refreshArtifactPreview();
+    artPushVersion(currentArtifact, currentArtifact.content || '');
+    renderArtVersions();
+    localizeArtPanel();
+    artView = (opts && opts.view) || (artIsLive(kind) ? 'preview' : 'code');
+    setArtView(artView);
     syncArtifactActions();
     if (panel) panel.classList.add('open');
     if (opts && opts.focus && editor) {
@@ -2855,6 +3026,7 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
     var panel = document.getElementById('art-panel');
     var preview = document.getElementById('art-preview');
     if (preview) setPreviewFrame(preview, '');
+    setArtFullscreen(false);
     if (panel) panel.classList.remove('open');
   }
   function slugifyArtifact(value) {
@@ -3094,7 +3266,16 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
       saveChats();
       if (window.TAP && fullText && promptText) { try { TAP.recordSent(promptText); } catch (eTap2) {} }
       var art = extractArtifact(fullText);
-      if (art) openArtifact(art);
+      if (art) {
+        var artPanelEl = document.getElementById('art-panel');
+        if (currentArtifact && artPanelEl && artPanelEl.classList.contains('open') && artifactKind(currentArtifact) === artifactKind(art) && currentArtifact.content !== art.content && !currentArtifact.url) {
+          readArtifactDraft();
+          artPushVersion(currentArtifact, currentArtifact.content || '');
+          art.versions = (currentArtifact.versions || []).slice();
+        }
+        appendArtifactChip(contentCol, art);
+        openArtifact(art);
+      }
       if (localStorage.getItem('ta_auto_read') === '1' && fullText) {
         var lastSpeak = document.querySelector('.msg-row.ai:last-child .speak-msg-btn');
         speakText(fullText, lastSpeak);
@@ -4658,11 +4839,33 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
     document.getElementById('art-close-btn').addEventListener('click', closeArtifact);
     document.getElementById('art-copy-btn').addEventListener('click', function() {
       readArtifactDraft();
-      if (currentArtifact) navigator.clipboard.writeText(currentArtifact.content || '');
+      if (!currentArtifact) return;
+      var cb = this;
+      var done = function() { cb.textContent = artT('copied'); setTimeout(function() { cb.textContent = artT('copy'); }, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(currentArtifact.content || '').then(done, function() {});
+    });
+    document.querySelectorAll('.art-view-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { setArtView(btn.getAttribute('data-view')); });
+    });
+    document.getElementById('art-download-btn').addEventListener('click', downloadArtifact);
+    document.getElementById('art-fs-btn').addEventListener('click', function() {
+      var panel = document.getElementById('art-panel');
+      setArtFullscreen(!(panel && panel.classList.contains('fs')));
+    });
+    document.getElementById('art-version').addEventListener('change', function() {
+      if (!currentArtifact || !currentArtifact.versions) return;
+      var v = currentArtifact.versions[Number(this.value)];
+      if (!v) return;
+      var ed = document.getElementById('art-editor');
+      if (ed) ed.value = v.content;
+      currentArtifact.content = v.content;
+      refreshArtifactPreview();
     });
     document.getElementById('art-save-btn').addEventListener('click', function() {
       readArtifactDraft();
       if (!currentArtifact) return;
+      artPushVersion(currentArtifact, currentArtifact.content || '');
+      renderArtVersions();
       addDocument({ title: currentArtifact.title, content: currentArtifact.content, type: 'artifact', lang: currentArtifact.lang });
       renderSidebar();
     });
@@ -4751,6 +4954,8 @@ html[data-theme="light"] { --blue: #3a5ba0; --purple: #3a5ba0; --green: #4a4a4f;
         var openM = document.querySelectorAll('.modal-backdrop.active');
         if (openM.length) { openM[openM.length - 1].classList.remove('active'); return; }
         closeCommandPalette();
+        var artP = document.getElementById('art-panel');
+        if (artP && artP.classList.contains('fs')) { setArtFullscreen(false); return; }
         closeArtifact();
         var p = document.getElementById('model-picker');
         if (p) p.classList.remove('open');

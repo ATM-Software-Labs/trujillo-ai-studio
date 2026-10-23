@@ -1,7 +1,7 @@
 import { ORIGIN, BRAND, jsonLdFor, hreflangLinks, localizedUrl } from './seo.js'
 import { makeNonce, shellCsp } from './security.js'
 
-const ASSET_V = '58'
+const ASSET_V = '59'
 
 function esc(s) {
   return String(s || '')
