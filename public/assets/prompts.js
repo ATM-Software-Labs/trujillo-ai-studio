@@ -634,11 +634,18 @@
       tabs.appendChild(b);
       tabs.classList.add('tap-5');
     }
-    var desc = document.querySelector('.sb-rewrite-desc');
-    if (desc) {
-      var rl = rawLang().split('-')[0];
-      desc.textContent = (S[rl] && S[rl].rewriteDesc) || REWRITE_DESC[rl] || S.en.rewriteDesc;
-    }
+    localizeRewrite();
+  }
+  function localizeRewrite() {
+    var rl = rawLang().split('-')[0];
+    var rd = (S[rl] && S[rl].rewriteDesc) || REWRITE_DESC[rl] || S.en.rewriteDesc;
+    document.querySelectorAll('.ta-rewrite-desc').forEach(function (d) { d.textContent = rd; });
+    var rb = document.getElementById('open-rewrite-btn');
+    if (rb) rb.title = rd;
+    var cb = document.getElementById('open-connectors-btn');
+    if (cb) cb.title = ({ es: 'Herramientas y fuentes conectadas al chat', ca: 'Eines i fonts connectades al xat' })[rl] || 'Tools and sources connected to the chat';
+    var ol = document.getElementById('rewrite-open-link');
+    if (ol) ol.textContent = ({ es: 'Abrir', ca: 'Obre' })[rl] || 'Open';
   }
 
   /* ---------- hero starters ---------- */
@@ -726,7 +733,7 @@
   window.TAP = {
     init: init, mountHero: mountHero, beforeSend: beforeSend, roleContext: roleContext, rolePreset: rolePreset,
     recordSent: recordSent, renderSidebar: renderSidebar, openBuilder: openBuilder, insertPrompt: insertPrompt,
-    findVars: findVars, refresh: refresh,
+    findVars: findVars, refresh: refresh, localizeRewrite: localizeRewrite,
     _: { s: s, lang: lang, roles: roles, currentRoleId: currentRoleId, roleById: roleById, dialog: dialog, btn: btn, field: field, el: el, esc: esc, openFavDialog: openFavDialog, input: input, announce: announce }
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
