@@ -1400,7 +1400,9 @@
     try {
       if (isImgRequest) {
         if (textContainer) textContainer.innerHTML = '<span style="color:var(--purple);font-weight:600;font-size:0.85rem">' + t('genImage') + '</span><span class="pulse-cursor"></span>';
-        var imgRes = await fetch('/api/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: abortCtl ? abortCtl.signal : undefined, body: JSON.stringify({ prompt: promptText }) });
+        var imgHeaders = { 'Content-Type': 'application/json' };
+        if (authToken) imgHeaders.Authorization = 'Bearer ' + authToken;
+        var imgRes = await fetch('/api/image', { method: 'POST', headers: imgHeaders, signal: abortCtl ? abortCtl.signal : undefined, body: JSON.stringify({ prompt: promptText }) });
         var imgData = await imgRes.json();
         if (imgData.ok && imgData.imageUrl) {
           var imgMd = '![' + (promptText.slice(0, 60) || 'Imagen') + '](' + imgData.imageUrl + ')';
@@ -2938,6 +2940,7 @@
   async function openShareModal() {
     var chat = chats[currentChatId];
     if (!chat || !Array.isArray(chat.messages) || !chat.messages.length) return alert('No hay mensajes para compartir.');
+    if (!requireAccount('compartir')) return;
     var input = document.getElementById('share-link-input');
     var toast = document.getElementById('share-toast');
     if (input) input.value = 'Generando enlace…';
@@ -2945,9 +2948,11 @@
     openModal('modal-share');
     try {
       var modelEl = document.getElementById('model-select');
+      var shareHeaders = { 'Content-Type': 'application/json' };
+      if (authToken) shareHeaders.Authorization = 'Bearer ' + authToken;
       var res = await fetch('/api/share', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: shareHeaders,
         body: JSON.stringify({ title: chat.title || 'Conversación en Trujillo AI', messages: chat.messages, model: modelEl ? modelEl.value : 'openai/gpt-oss-120b' })
       });
       var d = await res.json();

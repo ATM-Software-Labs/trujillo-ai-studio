@@ -5,6 +5,8 @@
  * system prompt del cliente: NutriFit necesita el suyo para devolver JSON.
  */
 import { bumpOps, parseDataImage, VISION_MODELS } from './ops.js'
+import { consumeCapped } from './counters.js'
+import { burstAllow, intEnv } from './guard.js'
 
 const CUPO_DIARIO = 400
 const MAX_MENSAJES = 8
@@ -23,19 +25,52 @@ function json(data, status, corsHeaders, extra = {}) {
   })
 }
 
-function errorOpenAI(message, status, type, corsHeaders) {
-  return json({ error: { message, type, code: type } }, status, corsHeaders)
+function errorOpenAI(message, status, type, corsHeaders, extra = {}) {
+  const headers = status === 429 ? { 'Retry-After': '60', ...extra } : extra
+  return json({ error: { message, type, code: type } }, status, corsHeaders, headers)
 }
 
-/** Comparación en tiempo constante. Longitudes distintas no llegan a subtle. */
-async function bearerValido(request, esperado) {
-  if (!esperado) return true
+/**
+ * Comparación en tiempo constante. Sin clave configurada el gateway está cerrado:
+ * no se acepta ninguna petición (antes, la ausencia de GATEWAY_API_KEY abría /v1).
+ */
+export async function bearerValido(request, esperado) {
+  if (!esperado) return false
   const header = request.headers.get('Authorization') || ''
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
   const a = new TextEncoder().encode(token)
   const b = new TextEncoder().encode(esperado)
   if (a.byteLength !== b.byteLength || a.byteLength === 0) return false
-  return crypto.subtle.timingSafeEqual(a, b)
+  if (typeof crypto.subtle.timingSafeEqual === 'function') {
+    return crypto.subtle.timingSafeEqual(a, b)
+  }
+  let diff = 0
+  for (let i = 0; i < a.byteLength; i++) diff |= a[i] ^ b[i]
+  return diff === 0
+}
+
+/** Auth y ráfaga. No toca KV ni D1 ni el modelo. Sin clave: siempre 401. */
+export async function guardGateway(request, env, corsHeaders, route) {
+  if (!env?.GATEWAY_API_KEY) {
+    return errorOpenAI('Gateway desactivado. Configura GATEWAY_API_KEY.', 401, 'invalid_api_key', corsHeaders)
+  }
+  if (!(await bearerValido(request, env.GATEWAY_API_KEY))) {
+    return errorOpenAI('Clave inválida', 401, 'invalid_api_key', corsHeaders)
+  }
+  const ip = request.headers.get('CF-Connecting-IP') || 'anon'
+  const fallback = route === 'models' ? 30 : 15
+  const limit = intEnv(env, 'V1_BURST_PER_MIN', fallback)
+  const burst = await burstAllow(env, {
+    key: `v1:${route}:${ip}`,
+    limit,
+    windowSec: 60,
+    binding: env.RL_V1,
+    bindingKey: `${route}:${ip}`
+  })
+  if (!burst.ok) {
+    return errorOpenAI('Demasiadas peticiones al gateway', 429, 'rate_limit_exceeded', corsHeaders)
+  }
+  return null
 }
 
 /**
@@ -85,15 +120,15 @@ export function prepararMensajesOpenAI(messages) {
 }
 
 async function cupoDisponible(env) {
-  if (!env?.BOT_MEMORY) return true
-  const key = `openai_v1_${new Date().toISOString().slice(0, 10)}`
-  const n = Number(await env.BOT_MEMORY.get(key)) || 0
-  if (n >= CUPO_DIARIO) return false
-  await env.BOT_MEMORY.put(key, String(n + 1), { expirationTtl: 172800 })
-  return true
+  const cap = intEnv(env, 'V1_DAILY_CAP', CUPO_DIARIO)
+  const key = `v1:${new Date().toISOString().slice(0, 10)}`
+  const res = await consumeCapped(env, key, 1, cap)
+  return !!res.allowed
 }
 
-export function handleOpenAIModels(corsHeaders) {
+export async function handleOpenAIModels(request, env, corsHeaders) {
+  const denied = await guardGateway(request, env, corsHeaders, 'models')
+  if (denied) return denied
   const data = [
     ...VISION_MODELS.map((id) => ({ id, object: 'model', owned_by: 'trujillo-ai' })),
     { id: 'gpt-4o', object: 'model', owned_by: 'trujillo-ai' },
@@ -103,9 +138,8 @@ export function handleOpenAIModels(corsHeaders) {
 }
 
 export async function handleOpenAIChatCompletions(request, env, ctx, { callGroqChat, corsHeaders }) {
-  if (!(await bearerValido(request, env.GATEWAY_API_KEY))) {
-    return errorOpenAI('Clave inválida', 401, 'invalid_api_key', corsHeaders)
-  }
+  const denied = await guardGateway(request, env, corsHeaders, 'completions')
+  if (denied) return denied
   if (!env.GROQ_API_KEY) {
     return errorOpenAI('Motor de visión sin configurar', 503, 'engine_unconfigured', corsHeaders)
   }

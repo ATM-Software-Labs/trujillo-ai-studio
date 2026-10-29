@@ -44,9 +44,58 @@ OWNER_EMAILS = "alberto@trujillomingorance.com,atrumin16@gmail.com"
 # MS_CLIENT_ID, MS_TENANT_ID and MS_CLIENT_SECRET exist (never in this file).
 ADMIN_EMAILS = "alberto@trujillomingorance.com"
 MS_ALLOWED_DOMAIN = "trujillomingorance.com"
-# Secreto opcional del gateway OpenAI (no va aquí):
+# /v1 queda CERRADO hasta que exista este secreto. Sin él, /v1/models y
+# /v1/chat/completions responden 401 y no llaman al modelo ni escriben nada.
 #   npx wrangler secret put GATEWAY_API_KEY
+#
+# Pausar el uso público de modelos (el propietario sigue exento): AI_KILL_SWITCH = "1"
+# Tope global de peticiones de IA al día, sin el propietario (0 lo desactiva): AI_DAILY_CAP = "1500"
+# Invitados: ANON_DAILY_TOKENS = "8000"  Cuentas: USER_DAILY_TOKENS = "50000"
+# Cerrar invitados: ANON_AI_DISABLED = "1"
+# Publicación: PUBLISH_DISABLED = "1"  PUBLISH_MODERATION = "1"  PUBLISH_DAILY_CAP = "8"
+# Compartir chats: SHARE_DISABLED = "1"  SHARE_DAILY_CAP = "20"
+# Cupo /v1 (solo con GATEWAY_API_KEY): V1_DAILY_CAP = "400"  V1_BURST_PER_MIN = "15"
+# Turnstile (los dos a la vez, o ninguno). El secreto NO va en este archivo:
+#   TURNSTILE_SITE_KEY = "<sitekey pública>"
+#   TURNSTILE_HOSTNAMES = "ai.trujillomingorance.com"
+#   npx wrangler secret put TURNSTILE_SECRET_KEY
 
 [[kv_namespaces]]
 binding = "BOT_MEMORY"
 id = "bab271312bfa4c84a483c6ee7b7a1756"
+
+# Contadores (ops, tokens, cupo /v1, correo, ideas). Sustituye las escrituras KV.
+# Crear la base y sustituir database_id ANTES de desplegar:
+#   npx wrangler d1 create groq-discord-bot-counters
+#   npx wrangler d1 migrations apply groq-discord-bot-counters --remote
+[[d1_databases]]
+binding = "COUNTERS"
+database_name = "groq-discord-bot-counters"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# Ráfagas por colo. Si la cuenta no admite el binding, el código sigue con
+# memoria del isolate y Cache API; se puede borrar este bloque.
+[[ratelimits]]
+name = "RL_V1"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 30
+  period = 60
+
+[[ratelimits]]
+name = "RL_AI"
+namespace_id = "1002"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 60
+
+[[ratelimits]]
+name = "RL_AUTH"
+namespace_id = "1003"
+
+  [ratelimits.simple]
+  limit = 8
+  period = 60

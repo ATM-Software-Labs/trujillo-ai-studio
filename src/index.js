@@ -49,6 +49,7 @@ import { handleTextToolsRequest } from './text_tools.js';
 import {
   applyEnrichment,
   applyTurn,
+  emptyProfile,
   enrichExtractMessages,
   formatProfileBlock,
   loadProfile,
@@ -57,6 +58,7 @@ import {
   saveProfile,
   sanitizeProfile,
   shouldLlmExtract,
+  shouldPersistProfile,
   shouldSynthesize,
   synthMessages
 } from './profile.js';
@@ -65,6 +67,9 @@ import { mergeGuideFeed, STATIC_GUIDES, STATIC_SLUGS, HIDDEN_KEY } from './guide
 import { consumeMailTicket, honeypotFilled, issueMailTicket, rateMail } from './mail_gate.js';
 import { handleInternalAdmin } from './admin_internal.js';
 import { applySecurityHeaders, csrfViolation, previewFrameResponse, msConfig, msStart, msCallback, clearMsStateCookie, makeNonce } from './security.js';
+import { consumeCapped, readCounter } from './counters.js';
+import { burstAllow, flagOn, intEnv } from './guard.js';
+import { verifyTurnstile } from './turnstile.js';
 
 const APP_FROM_EMAIL = 'no-reply@trujillomingorance.com';
 const APP_SUPPORT_EMAIL = 'alberto@trujillomingorance.com';
@@ -625,9 +630,11 @@ const worker = {
       });
     }
 
-    // Rate limiter solo en API (HTML/assets ya no entran aquí si run_worker_first está bien).
+    // Rate limiter solo en API. /v1 no entra aquí: sin GATEWAY_API_KEY debe responder
+    // siempre 401, y con clave el límite vive en el gateway (antes de D1 y del modelo).
     const isApiPath = url.pathname.startsWith('/api/');
-    if (isApiPath || request.method === 'POST') {
+    const isV1 = url.pathname === '/v1/models' || url.pathname === '/v1/chat/completions' || url.pathname.startsWith('/v1/');
+    if ((isApiPath || request.method === 'POST') && !isV1) {
       const ipRateKey = `rate_${clientIp}`;
       const rateData = getFromRam(ipRateKey) || { count: 0, resetAt: Date.now() + 60000 };
       if (Date.now() > rateData.resetAt) {
@@ -754,7 +761,7 @@ const worker = {
     if (SITE_PAGES[url.pathname]) {
       const p = SITE_PAGES[url.pathname];
       const meta = pageMeta(p.key, pageLang);
-      return htmlResponse({ title: meta.title, description: meta.description, path: p.path, kind: 'site', page: p.page, lang: pageLang, urlLang: pathLang || 'es', geo }, 200, corsHeaders);
+      return htmlResponse({ title: meta.title, description: meta.description, path: p.path, kind: 'site', page: p.page, lang: pageLang, urlLang: pathLang || 'es', geo, turnstileSiteKey: env.TURNSTILE_SITE_KEY || '' }, 200, corsHeaders);
     }
 
     // Isolated artifact preview document (opaque origin via iframe sandbox, strict CSP).
@@ -839,7 +846,8 @@ const worker = {
         page: 'login',
         lang: pageLang,
         urlLang: pathLang || 'es',
-        geo
+        geo,
+        turnstileSiteKey: env.TURNSTILE_SITE_KEY || ''
       }, 200, corsHeaders);
     }
 
@@ -904,7 +912,8 @@ const worker = {
         page: 'register',
         lang: pageLang,
         urlLang: pathLang || 'es',
-        geo
+        geo,
+        turnstileSiteKey: env.TURNSTILE_SITE_KEY || ''
       }, 200, corsHeaders);
     }
 
@@ -922,7 +931,8 @@ const worker = {
         page: 'chat',
         lang: pageLang,
         urlLang: pathLang || 'es',
-        geo
+        geo,
+        turnstileSiteKey: env.TURNSTILE_SITE_KEY || ''
       }, 200, corsHeaders);
     }
 
@@ -949,6 +959,22 @@ const worker = {
     // ========================================================
     if (url.pathname === '/api/share' && request.method === 'POST') {
       try {
+        if (flagOn(env, 'SHARE_DISABLED')) {
+          return new Response(JSON.stringify({ error: 'Compartir está desactivado.' }), { status: 403, headers: corsHeaders });
+        }
+        const shareBurst = await burstAllow(env, { key: `share:${clientIp}`, limit: 8, windowSec: 60, binding: env.RL_AI, bindingKey: `share:${clientIp}` });
+        if (!shareBurst.ok) {
+          return new Response(JSON.stringify({ error: 'rate_limited', message: 'Demasiados enlaces. Espera un minuto.' }), {
+            status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' }
+          });
+        }
+        const shareUser = await getAuthedUser(request, env);
+        if (!shareUser) {
+          return new Response(JSON.stringify({ error: 'Entra con tu cuenta para compartir una conversación.' }), {
+            status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        const shareOwner = isOwnerUser(shareUser.email, env) || isOwnerUser(shareUser.id, env);
         const body = await request.json();
         const { title, model, specialty } = body;
         const rawMessages = Array.isArray(body.messages) ? body.messages : [];
@@ -970,6 +996,15 @@ const worker = {
         }).filter((m) => m.content);
         if (messages.length === 0) {
           return new Response(JSON.stringify({ error: 'No hay mensajes para compartir' }), { status: 400, headers: corsHeaders });
+        }
+        if (!shareOwner) {
+          const day = new Date().toISOString().slice(0, 10);
+          const shareCap = await consumeCapped(env, `share:${day}:${shareUser.id || shareUser.email}`, 1, intEnv(env, 'SHARE_DAILY_CAP', 20));
+          if (!shareCap.allowed) {
+            return new Response(JSON.stringify({ error: 'Límite diario de conversaciones compartidas.' }), {
+              status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+          }
         }
 
         const shareId = 'sh_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
@@ -1003,6 +1038,18 @@ const worker = {
           return new Response(JSON.stringify({ error: 'Crea una cuenta o inicia sesión para publicar en Artifact o Guides' }), {
             status: 401,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        const publishOwner = isOwnerUser(user.email, env) || isOwnerUser(user.id, env);
+        if (!publishOwner && flagOn(env, 'PUBLISH_DISABLED')) {
+          return new Response(JSON.stringify({ error: 'La publicación está desactivada.' }), {
+            status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        const publishBurst = await burstAllow(env, { key: `pub:${user.id || clientIp}`, limit: 6, windowSec: 60, binding: env.RL_AI, bindingKey: `pub:${user.id || clientIp}` });
+        if (!publishOwner && !publishBurst.ok) {
+          return new Response(JSON.stringify({ error: 'Demasiadas publicaciones. Espera un minuto.' }), {
+            status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' }
           });
         }
         if (!env.BOT_MEMORY) {
@@ -1069,26 +1116,39 @@ const worker = {
           createdAt: (existingNs && existingNs.createdAt) || now,
           updatedAt: now
         };
-        await env.BOT_MEMORY.put(key, JSON.stringify(record));
-        await env.BOT_MEMORY.put(slugPointerKey(dest, slug), JSON.stringify({ handle, dest, slug, authorId: user.id || '' }));
-        if (dest === 'artifact') {
-          const legacy = await loadJsonRecord(env, 'art:' + slug);
-          if (!legacy || ownsRecord(user, legacy)) {
-            await env.BOT_MEMORY.put('art:' + slug, JSON.stringify(record));
+        if (!publishOwner) {
+          const day = new Date().toISOString().slice(0, 10);
+          const pubCap = await consumeCapped(env, `pub:${day}:${user.id || user.email}`, 1, intEnv(env, 'PUBLISH_DAILY_CAP', 8));
+          if (!pubCap.allowed) {
+            return new Response(JSON.stringify({ error: 'Límite diario de publicaciones alcanzado.' }), {
+              status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
           }
         }
+        const listed = publishOwner || !flagOn(env, 'PUBLISH_MODERATION');
+        await env.BOT_MEMORY.put(key, JSON.stringify(record));
         await upsertIndex(env, userIndexKey(dest, handle), indexItem(record), slug);
-        await upsertIndex(env, publicIndexKey(dest), indexItem(record), slug, handle);
-        if (dest === 'guide') await unhideGuideSlug(env, slug);
-        if (dest === 'artifact') {
-          await upsertIndex(env, 'art:index', { slug, title, updatedAt: now, lang, author: record.author, handle }, slug);
+        if (listed) {
+          await env.BOT_MEMORY.put(slugPointerKey(dest, slug), JSON.stringify({ handle, dest, slug, authorId: user.id || '' }));
+          if (dest === 'artifact') {
+            const legacy = await loadJsonRecord(env, 'art:' + slug);
+            if (!legacy || ownsRecord(user, legacy)) {
+              await env.BOT_MEMORY.put('art:' + slug, JSON.stringify(record));
+            }
+          }
+          await upsertIndex(env, publicIndexKey(dest), indexItem(record), slug, handle);
+          if (dest === 'guide') await unhideGuideSlug(env, slug);
+          if (dest === 'artifact') {
+            await upsertIndex(env, 'art:index', { slug, title, updatedAt: now, lang, author: record.author, handle }, slug);
+          }
         }
-        const urlOut = publicUrl(dest, handle, slug);
+        const urlOut = listed ? publicUrl(dest, handle, slug) : '';
         return new Response(JSON.stringify({
           ok: true,
           slug,
           dest,
           handle,
+          pending: !listed,
           url: urlOut,
           user: publicUser(user)
         }), {
@@ -1325,11 +1385,15 @@ const worker = {
     // ========================================================
     if (url.pathname === '/api/image' && request.method === 'POST') {
       try {
+        const gate = await guardModelRequest(request, env, { route: 'image', anonPerMin: 4, userPerMin: 12 });
+        if (gate.response) return gate.response;
         const body = await request.json();
         let rawPrompt = (body.prompt || '').trim();
         if (!rawPrompt) {
           return new Response(JSON.stringify({ error: 'Prompt requerido' }), { status: 400, headers: corsHeaders });
         }
+        const budget = await consumeModelBudget(env, gate.who, 350);
+        if (budget) return budget;
 
         // Clean user prompt
         const cleanPrompt = rawPrompt.replace(/^(genera una imagen de|dibuja|crea una imagen de|haz una foto de|imagen de|generate image of|draw)/i, '').trim() || rawPrompt;
@@ -1404,6 +1468,8 @@ const worker = {
         if (!email.includes('@') || password.length < 6 || !name) {
           return new Response(JSON.stringify({ error: 'Datos de registro inválidos. Mínimo 6 caracteres.' }), { status: 400, headers: corsHeaders });
         }
+        const bot = await rejectFormBot(request, env, body, 'signup', clientIp);
+        if (bot) return bot;
         const existingUser = await getCachedKvValue(env.BOT_MEMORY, `user_email_${email}`);
         if (existingUser) {
           return new Response(JSON.stringify({ error: 'Este correo electrónico ya está registrado. Inicie sesión.' }), { status: 400, headers: corsHeaders });
@@ -1411,6 +1477,10 @@ const worker = {
         const mailRate = await rateMail(env, clientIp);
         if (!mailRate.ok) {
           return new Response(JSON.stringify({ error: 'Demasiados intentos. Espera una hora.' }), { status: 429, headers: corsHeaders });
+        }
+        const signupCap = await consumeCapped(env, `signup:${new Date().toISOString().slice(0, 10)}:${clientIp}`, 1, 8);
+        if (!signupCap.allowed) {
+          return new Response(JSON.stringify({ error: 'Demasiados registros desde esta red hoy.' }), { status: 429, headers: corsHeaders });
         }
 
         const salt = crypto.randomUUID();
@@ -1502,6 +1572,8 @@ const worker = {
         const body = await request.json();
         const email = (body.email || '').trim().toLowerCase();
         const password = body.password || '';
+        const bot = await rejectFormBot(request, env, body, 'login', clientIp);
+        if (bot) return bot;
 
         let userRecord = getFromRam(`user_email_${email}`);
         if (!userRecord && env.BOT_MEMORY) {
@@ -1674,6 +1746,8 @@ const worker = {
         if (!email || !email.includes('@')) {
           return new Response(JSON.stringify({ error: 'Introduce un correo electrónico válido.' }), { status: 400, headers: corsHeaders });
         }
+        const bot = await rejectFormBot(request, env, body, 'forgot', clientIp);
+        if (bot) return bot;
         const mailRate = await rateMail(env, clientIp);
         if (!mailRate.ok) {
           return new Response(JSON.stringify({ error: 'Demasiados intentos. Espera una hora.' }), { status: 429, headers: corsHeaders });
@@ -1907,6 +1981,8 @@ const worker = {
         if (honeypotFilled(body)) {
           return new Response(JSON.stringify({ error: 'Rechazado' }), { status: 400, headers: corsHeaders });
         }
+        const bot = await rejectFormBot(request, env, body, 'idea', clientIp);
+        if (bot) return bot;
         const mailRate = await rateMail(env, clientIp);
         if (!mailRate.ok) {
           return new Response(JSON.stringify({ error: 'Demasiados envíos. Espera una hora.' }), { status: 429, headers: corsHeaders });
@@ -1940,6 +2016,10 @@ const worker = {
 
     if (url.pathname === '/api/transcribe' && request.method === 'POST') {
       try {
+        const gate = await guardModelRequest(request, env, { route: 'transcribe', anonPerMin: 4, userPerMin: 12 });
+        if (gate.response) return gate.response;
+        const budget = await consumeModelBudget(env, gate.who, 500);
+        if (budget) return budget;
         const userGroqKey = request.headers.get('x-groq-user-key');
         const groqApiKey = userGroqKey || env.GROQ_API_KEY;
         const locale = url.searchParams.get('lang') || pickLang(request);
@@ -2173,7 +2253,7 @@ const worker = {
     // ========================================================
     const rutaV1 = rutaOpenAI(url.pathname);
     if (rutaV1 === 'models' && isGetOrHead) {
-      return handleOpenAIModels(corsHeaders);
+      return handleOpenAIModels(request, env, corsHeaders);
     }
     if (rutaV1 === 'completions' && request.method === 'POST') {
       return handleOpenAIChatCompletions(request, env, ctx, { callGroqChat, corsHeaders });
@@ -2200,6 +2280,10 @@ const worker = {
         return new Response(null, { headers: corsHeaders });
       }
       if (request.method === 'POST') {
+        const gate = await guardModelRequest(request, env, { route: 'tools', anonPerMin: 6, userPerMin: 20 });
+        if (gate.response) return gate.response;
+        const budget = await consumeModelBudget(env, gate.who, 350);
+        if (budget) return budget;
         return handleTextToolsRequest(request, env, ctx, corsHeaders);
       }
       return new Response(JSON.stringify({ error: 'Método no permitido. Usa POST.' }), {
@@ -2304,7 +2388,8 @@ const worker = {
       page: '404',
       lang: pageLang,
       urlLang: pathLang || 'es',
-      geo
+      geo,
+      turnstileSiteKey: env.TURNSTILE_SITE_KEY || ''
     }, 404, corsHeaders);
   }
 };
@@ -2314,7 +2399,7 @@ export default worker;
 // ==========================================
 // Handlers & Funciones de Apoyo
 // ==========================================
-function isOwnerUser(userIdentifier, env = null) {
+export function isOwnerUser(userIdentifier, env = null) {
   if (!userIdentifier) return false;
   const idStr = String(userIdentifier).toLowerCase().replace(/^@/, '').replace(/^x_/, '');
   const defaults = ['alberto@trujillomingorance.com', 'atrumin16@gmail.com'];
@@ -2330,44 +2415,145 @@ function isOwnerUser(userIdentifier, env = null) {
 
 const USER_DAILY_TOKEN_LIMIT = 50000;
 
-async function checkAndConsumeGlobalTokens(env, userIdentifier, estimatedTokens = 350) {
+function tokenKey(userIdentifier) {
+  const today = new Date().toISOString().slice(0, 10);
+  const cleanId = String(userIdentifier || 'anon').replace(/[^a-zA-Z0-9_.@-]/g, '_').slice(0, 80);
+  return `tok:${today}:${cleanId}`;
+}
+
+async function rejectFormBot(request, env, body, action, ip) {
+  const ts = await verifyTurnstile(env, {
+    token: body?.turnstileToken || body?.['cf-turnstile-response'],
+    ip,
+    action
+  });
+  if (!ts.ok) {
+    return new Response(JSON.stringify({ error: ts.error || 'Confirma que no eres un bot.' }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+    });
+  }
+  const burst = await burstAllow(env, {
+    key: `auth:${ip}`,
+    limit: 8,
+    windowSec: 60,
+    binding: env.RL_AUTH,
+    bindingKey: `auth:${ip}`
+  });
+  if (!burst.ok) {
+    return new Response(JSON.stringify({ error: 'Demasiados intentos. Espera un minuto.' }), {
+      status: 429,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' }
+    });
+  }
+  return null;
+}
+
+async function requestIdentity(request, env) {
+  const ip = request.headers.get('CF-Connecting-IP') || 'anon';
+  let email = '';
+  const header = request.headers.get('Authorization') || '';
+  if (header.startsWith('Bearer ')) {
+    const payload = await verifyJwtToken(header.slice(7).trim(), getJwtSecret(env));
+    email = String(payload?.email || '').toLowerCase();
+  }
+  if (!email) {
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/(?:^|;\s*)(?:ta_session|auth_token)=([^;]+)/);
+    if (match) {
+      let token = match[1];
+      try { token = decodeURIComponent(token); } catch { /* cookie ya decodificada */ }
+      const payload = await verifyJwtToken(token, getJwtSecret(env));
+      email = String(payload?.email || '').toLowerCase();
+    }
+  }
+  const byokKey = (request.headers.get('x-groq-user-key') || '').trim();
+  const ident = email || ip;
+  return { ip, email, ident, authed: !!email, owner: isOwnerUser(ident, env), byok: !!byokKey };
+}
+
+async function guardModelRequest(request, env, { route = 'ai', anonPerMin = 6, userPerMin = 20 } = {}) {
+  const who = await requestIdentity(request, env);
+  if (!who.owner && flagOn(env, 'AI_KILL_SWITCH')) {
+    return { who, response: aiPausedResponse() };
+  }
+  if (!who.owner) {
+    const limit = intEnv(env, 'AI_BURST_PER_MIN', who.authed || who.byok ? userPerMin : anonPerMin);
+    const burst = await burstAllow(env, {
+      key: `${route}:${who.authed ? who.ident : who.ip}`,
+      limit,
+      windowSec: 60,
+      binding: env.RL_AI,
+      bindingKey: `${route}:${who.authed ? who.ident : who.ip}`
+    });
+    if (!burst.ok) {
+      return {
+        who,
+        response: new Response(JSON.stringify({ error: 'rate_limited', message: 'Demasiadas peticiones. Espera un minuto.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': String(burst.retryAfter || 60) }
+        })
+      };
+    }
+  }
+  return { who, response: null };
+}
+
+function aiPausedResponse() {
+  return new Response(JSON.stringify({
+    error: 'paused',
+    message: 'Trujillo AI está en pausa temporal. Prueba de nuevo más tarde.'
+  }), {
+    status: 429,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'Retry-After': '3600' }
+  });
+}
+
+async function consumeModelBudget(env, who, cost = 350) {
+  if (!who || who.owner || who.byok) return null;
+  if (!who.authed && flagOn(env, 'ANON_AI_DISABLED')) {
+    return new Response(JSON.stringify({
+      error: 'auth_required',
+      message: 'El acceso de invitados está cerrado. Entra con tu cuenta para continuar.'
+    }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  const cap = intEnv(env, 'AI_DAILY_CAP', 1500);
+  if (cap > 0) {
+    const global = await consumeCapped(env, `ai:${today}`, 1, cap);
+    if (!global.allowed) {
+      return new Response(JSON.stringify({
+        error: 'capacity',
+        message: 'Capacidad diaria del servicio agotada. Se reanuda a las 00:00 UTC.'
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '3600' }
+      });
+    }
+  }
+  const quota = await checkAndConsumeGlobalTokens(env, who.ident, cost, { authed: who.authed });
+  if (!quota.allowed) {
+    const limit = Number(quota.limit) || 0;
+    return new Response(JSON.stringify({
+      error: 'global_quota_exceeded',
+      message: `Límite diario de ${limit.toLocaleString('es-ES')} tokens alcanzado (${Number(quota.current).toLocaleString('es-ES')}/${limit.toLocaleString('es-ES')}). Se reinicia a las 00:00 UTC. Puedes configurar tu clave de API Groq (BYOK) en Ajustes.`
+    }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  return null;
+}
+
+export async function checkAndConsumeGlobalTokens(env, userIdentifier, estimatedTokens = 350, { authed = false } = {}) {
   if (isOwnerUser(userIdentifier, env)) {
     return { allowed: true, current: 0, limit: 'unlimited', isOwner: true };
   }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const cleanId = String(userIdentifier || 'anon').replace(/[^a-zA-Z0-9_.-]/g, '_');
-  const userQuotaKey = `user_tokens_${cleanId}_${today}`;
-
-  let currentTokens = 0;
-  const inRam = getFromRam(userQuotaKey);
-  if (inRam !== null) {
-    currentTokens = parseInt(inRam, 10) || 0;
-  } else if (env.BOT_MEMORY) {
-    const val = await env.BOT_MEMORY.get(userQuotaKey);
-    if (val) currentTokens = parseInt(val, 10) || 0;
-  }
-
-  if (currentTokens + estimatedTokens > USER_DAILY_TOKEN_LIMIT) {
-    return {
-      allowed: false,
-      current: currentTokens,
-      limit: USER_DAILY_TOKEN_LIMIT,
-      remaining: Math.max(0, USER_DAILY_TOKEN_LIMIT - currentTokens)
-    };
-  }
-
-  const updatedTokens = currentTokens + estimatedTokens;
-  setInRam(userQuotaKey, updatedTokens);
-  if (env.BOT_MEMORY) {
-    await env.BOT_MEMORY.put(userQuotaKey, updatedTokens.toString(), { expirationTtl: 86400 });
-  }
-
+  const limit = authed ? intEnv(env, 'USER_DAILY_TOKENS', USER_DAILY_TOKEN_LIMIT) : intEnv(env, 'ANON_DAILY_TOKENS', 8000);
+  const res = await consumeCapped(env, tokenKey(userIdentifier), estimatedTokens, limit);
   return {
-    allowed: true,
-    current: updatedTokens,
-    limit: USER_DAILY_TOKEN_LIMIT,
-    remaining: Math.max(0, USER_DAILY_TOKEN_LIMIT - updatedTokens)
+    allowed: res.allowed,
+    current: res.current,
+    limit,
+    remaining: Math.max(0, limit - res.current),
+    isOwner: false
   };
 }
 
@@ -2380,20 +2566,13 @@ async function peekTokenUsage(env, userIdentifier) {
   if (isOwnerUser(userIdentifier, env)) {
     return { current: 0, limit: USER_DAILY_TOKEN_LIMIT, remaining: USER_DAILY_TOKEN_LIMIT, unlimited: true, resetAt: nextUtcMidnightIso() };
   }
-  const today = new Date().toISOString().slice(0, 10);
-  const cleanId = String(userIdentifier || 'anon').replace(/[^a-zA-Z0-9_.-]/g, '_');
-  const userQuotaKey = `user_tokens_${cleanId}_${today}`;
-  let currentTokens = 0;
-  const inRam = getFromRam(userQuotaKey);
-  if (inRam !== null) currentTokens = parseInt(inRam, 10) || 0;
-  else if (env.BOT_MEMORY) {
-    const val = await env.BOT_MEMORY.get(userQuotaKey);
-    if (val) currentTokens = parseInt(val, 10) || 0;
-  }
+  const authed = String(userIdentifier || '').includes('@');
+  const limit = authed ? intEnv(env, 'USER_DAILY_TOKENS', USER_DAILY_TOKEN_LIMIT) : intEnv(env, 'ANON_DAILY_TOKENS', 8000);
+  const currentTokens = await readCounter(env, tokenKey(userIdentifier));
   return {
     current: currentTokens,
-    limit: USER_DAILY_TOKEN_LIMIT,
-    remaining: Math.max(0, USER_DAILY_TOKEN_LIMIT - currentTokens),
+    limit,
+    remaining: Math.max(0, limit - currentTokens),
     unlimited: false,
     resetAt: nextUtcMidnightIso()
   };
@@ -2491,14 +2670,11 @@ async function callGroqChat({ groqApiKey, messages, requestedModel = 'openai/gpt
 
 async function handleWebChatStream(request, env, ctx) {
   try {
-    const authHeader = request.headers.get('Authorization') || '';
-    const userGroqKey = request.headers.get('x-groq-user-key');
-    let authedUser = null;
-
-    if (authHeader.startsWith('Bearer ')) {
-      const token = authHeader.slice(7);
-      authedUser = await verifyJwtToken(token, getJwtSecret(env));
-    }
+    const gate = await guardModelRequest(request, env, { route: 'chat', anonPerMin: 6, userPerMin: 20 });
+    if (gate.response) return gate.response;
+    const who = gate.who;
+    const authedUser = who.authed ? { email: who.email } : null;
+    const userGroqKey = who.byok ? (request.headers.get('x-groq-user-key') || '') : '';
 
     const body = await request.json();
     const { prompt, model, role_preset, custom_prompt, knowledge_snippets, search_web, chat_history, length_mode, locale } = body;
@@ -2508,35 +2684,23 @@ async function handleWebChatStream(request, env, ctx) {
       return new Response(JSON.stringify({ error: 'empty_message' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const userIdentifier = authedUser?.email || request.headers.get('CF-Connecting-IP') || 'anon';
-    const isOwner = isOwnerUser(userIdentifier, env);
+    const userIdentifier = who.ident;
+    const isOwner = who.owner;
+    const budget = await consumeModelBudget(env, who, 350);
+    if (budget) return budget;
 
-    // Control de Cuota Diaria por Usuario / IP
-    if (!userGroqKey && !isOwner) {
-      const quotaCheck = await checkAndConsumeGlobalTokens(env, userIdentifier, 350);
-      if (!quotaCheck.allowed) {
-        return new Response(JSON.stringify({
-          error: 'global_quota_exceeded',
-          message: `Límite diario de 50,000 tokens alcanzado para hoy (${quotaCheck.current.toLocaleString()}/${USER_DAILY_TOKEN_LIMIT.toLocaleString()} tokens consumidos). Se reinicia a las 00:00 UTC. Puedes configurar tu clave de API Groq (BYOK) en Ajustes para acceso ilimitado.`
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
+    const adaptOn = body.adapt !== false;
+    let userProfile = authedUser ? await loadProfile(env, userIdentifier) : emptyProfile();
+    let profileSnapshot = userProfile;
+    if (!authedUser && body.profile && typeof body.profile === 'object') {
+      userProfile = sanitizeProfile({ ...userProfile, ...body.profile, notes: body.profile.notes || userProfile.notes });
     }
-
     const clientTz = body.timezone || request.cf?.timezone || userProfile?.timezone || 'Europe/Madrid';
     const timeContext = getRealtimeSystemTimeContext({
       timezone: clientTz,
       locale: locale || 'es',
       now: new Date()
     });
-
-    const adaptOn = body.adapt !== false;
-    let userProfile = await loadProfile(env, userIdentifier);
-    if (!authedUser && body.profile && typeof body.profile === 'object') {
-      userProfile = sanitizeProfile({ ...userProfile, ...body.profile, notes: body.profile.notes || userProfile.notes });
-    }
     if (typeof body.adapt === 'boolean') userProfile.enabled = body.adapt;
     const learned = adaptOn && userProfile.enabled !== false
       ? applyTurn(userProfile, {
@@ -2549,6 +2713,13 @@ async function handleWebChatStream(request, env, ctx) {
         })
       : { profile: userProfile, added: [], forgotten: [], forgetAll: false };
     userProfile = learned.profile;
+    const persistLearnedProfile = async () => {
+      if (!authedUser) return;
+      if (!shouldPersistProfile(profileSnapshot, userProfile)) return;
+      profileSnapshot = userProfile;
+      await saveProfile(env, userIdentifier, userProfile);
+    };
+    ctx.waitUntil(persistLearnedProfile().catch(() => {}));
 
     const detectedSpecialty = classifySpecialtyDomain(prompt);
     let effectiveRoleKey = (role_preset && role_preset !== 'auto' && PERSONAS[role_preset]) ? role_preset : detectedSpecialty.key;
@@ -2655,10 +2826,6 @@ ${DEFINITION_EXCELLENCE_DIRECTIVE}
     if (!groqApiKey) {
       return new Response(JSON.stringify({ error: 'missing_key', message: 'Error: GROQ_API_KEY no configurada en Cloudflare Secrets' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (adaptOn && userProfile.enabled !== false) {
-      ctx.waitUntil(saveProfile(env, userIdentifier, userProfile).catch(() => {}));
-    }
-
     const groqResult = await callGroqChat({
       groqApiKey,
       messages: sanitizeVisionPayload(messages, systemPrompt),
@@ -2705,10 +2872,10 @@ ${DEFINITION_EXCELLENCE_DIRECTIVE}
           forgotten: learned.forgotten.map((n) => n.text)
         })}\n\n`));
 
-        if (adaptOn && userProfile.enabled !== false) {
+        if (authedUser && adaptOn && userProfile.enabled !== false) {
           ctx.waitUntil((async () => {
             try {
-              await saveProfile(env, userIdentifier, userProfile);
+              await persistLearnedProfile();
               if (shouldLlmExtract(prompt, userProfile, learned) && groqApiKey && !useVision) {
                 const ext = await callGroqChat({
                   groqApiKey,
@@ -2726,10 +2893,10 @@ ${DEFINITION_EXCELLENCE_DIRECTIVE}
                   if (parsed.facts.length) {
                     const extra = applyEnrichment(userProfile, parsed);
                     userProfile = extra.profile;
-                    await saveProfile(env, userIdentifier, userProfile);
+                    await persistLearnedProfile();
                   } else {
                     userProfile.lastExtractAt = userProfile.turns;
-                    await saveProfile(env, userIdentifier, userProfile);
+                    await persistLearnedProfile();
                   }
                 }
               } else if (shouldSynthesize(userProfile) && groqApiKey && !useVision) {
@@ -2749,7 +2916,7 @@ ${DEFINITION_EXCELLENCE_DIRECTIVE}
                   if (sum.length > 20) {
                     userProfile.summary = sum;
                     userProfile.lastSynthAt = userProfile.turns;
-                    await saveProfile(env, userIdentifier, userProfile);
+                    await persistLearnedProfile();
                   }
                 }
               }
@@ -2931,6 +3098,17 @@ https://ai.trujillomingorance.com — chat, imagen adjunta, voz, lectura en voz 
     }
 
     if (name === 'imagen') {
+      if (!isOwnerUser(discordUserId, env)) {
+        if (flagOn(env, 'AI_KILL_SWITCH')) {
+          await sendDiscordReply(interaction, 'Trujillo AI está en pausa temporal.', isEphemeral);
+          return;
+        }
+        const burst = await burstAllow(env, { key: `discord-img:${discordUserId}`, limit: 6, windowSec: 60, binding: env.RL_AI, bindingKey: `discord-img:${discordUserId}` });
+        if (!burst.ok) {
+          await sendDiscordReply(interaction, 'Demasiadas imágenes. Espera un minuto.', isEphemeral);
+          return;
+        }
+      }
       const promptOpt = options?.find(o => o.name === 'prompt' || o.name === 'descripcion' || o.name === 'texto')?.value;
       const estiloOpt = options?.find(o => o.name === 'estilo')?.value || '';
       const aspectoOpt = options?.find(o => o.name === 'aspecto')?.value || '1024x1024';
@@ -3096,6 +3274,7 @@ https://ai.trujillomingorance.com — chat, imagen adjunta, voz, lectura en voz 
       }
     }
     let discordProfile = await loadProfile(env, discordUserId);
+    const discordProfileBefore = discordProfile;
     const discordTz = discordProfile.timezone || 'Europe/Madrid';
     const timeContext = getRealtimeSystemTimeContext({
       timezone: discordTz,
@@ -3111,7 +3290,7 @@ https://ai.trujillomingorance.com — chat, imagen adjunta, voz, lectura en voz 
     discordProfile = discordLearned.profile;
     const discordProfileBlock = formatProfileBlock(discordProfile, originalUserPrompt);
     if (discordProfileBlock) memoryInjection += '\n\n' + discordProfileBlock;
-    if (env.BOT_MEMORY) {
+    if (shouldPersistProfile(discordProfileBefore, discordProfile)) {
       try { await saveProfile(env, discordUserId, discordProfile); } catch (e) {}
     }
 
@@ -3138,7 +3317,7 @@ ${DEFINITION_EXCELLENCE_DIRECTIVE}
 === CONTEXTO TEMPORAL Y MERCADOS ===
 - Si recibes cotizaciones o noticias en los metadatos de búsqueda, úsalos para dar respuestas 100% actualizadas.${memoryInjection}`;
 
-    const rawAiResponse = await queryGroq(systemPrompt, userPrompt, selectedModel, env, maxTokens);
+    const rawAiResponse = await queryGroq(systemPrompt, userPrompt, selectedModel, env, maxTokens, discordUserId);
     let finalReply = formatForDiscord(rawAiResponse);
 
     if (webSources.length > 0) {
@@ -3197,7 +3376,8 @@ async function handleDiscordModalAsync(interaction, env, isEphemeral = false) {
       interaction.data.components[0].components[0].value,
       env.GROQ_MODEL || 'openai/gpt-oss-120b',
       env,
-      1500
+      1500,
+      discordUserId
     );
     await sendDiscordReply(interaction, formatForDiscord(rawAiResponse), isEphemeral);
   } catch (err) {
@@ -3205,7 +3385,17 @@ async function handleDiscordModalAsync(interaction, env, isEphemeral = false) {
   }
 }
 
-async function queryGroq(systemPrompt, userPrompt, model, env, maxTokens = 1500) {
+async function queryGroq(systemPrompt, userPrompt, model, env, maxTokens = 1500, rateKey = '') {
+  if (rateKey && !isOwnerUser(rateKey, env)) {
+    if (flagOn(env, 'AI_KILL_SWITCH')) throw new Error('Trujillo AI está en pausa temporal.');
+    const burst = await burstAllow(env, { key: `discord:${rateKey}`, limit: 15, windowSec: 60, binding: env.RL_AI, bindingKey: `discord:${rateKey}` });
+    if (!burst.ok) throw new Error('Demasiadas peticiones. Espera un minuto.');
+    const cap = intEnv(env, 'AI_DAILY_CAP', 1500);
+    if (cap > 0) {
+      const global = await consumeCapped(env, `ai:${new Date().toISOString().slice(0, 10)}`, 1, cap);
+      if (!global.allowed) throw new Error('Capacidad diaria del servicio agotada.');
+    }
+  }
   const groqApiKey = env.GROQ_API_KEY;
   if (!groqApiKey) throw new Error('GROQ_API_KEY no configurada');
 

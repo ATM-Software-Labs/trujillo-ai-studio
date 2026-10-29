@@ -4,6 +4,7 @@ import {
   formatMadridTime,
   formatRelativeHuman
 } from './time.js';
+import { addCounter, consumeCapped, readCounter, resetCounterMemory } from './counters.js';
 
 const OWNER_INBOX = 'alberto@trujillomingorance.com'
 const OWNER_INBOXES = ['alberto@trujillomingorance.com', 'atrumin16@gmail.com']
@@ -50,7 +51,16 @@ function emptyOps() {
   }
 }
 
-export async function readOps(env, day = utcDay()) {
+const pendingOps = new Map()
+let lastOpsFlush = 0
+
+export function resetOpsBuffer() {
+  pendingOps.clear()
+  lastOpsFlush = 0
+  resetCounterMemory()
+}
+
+async function legacyOps(env, day) {
   if (!env?.BOT_MEMORY) return emptyOps()
   try {
     const raw = await env.BOT_MEMORY.get(`ops_${day}`)
@@ -62,14 +72,33 @@ export async function readOps(env, day = utcDay()) {
   }
 }
 
+export async function flushOps(env) {
+  if (!pendingOps.size) return
+  const entries = [...pendingOps.entries()]
+  pendingOps.clear()
+  lastOpsFlush = Date.now()
+  await Promise.all(entries.map(([key, n]) => addCounter(env, key, n)))
+}
+
+export async function readOps(env, day = utcDay()) {
+  await flushOps(env)
+  const base = emptyOps()
+  const legacy = await legacyOps(env, day)
+  await Promise.all(Object.keys(base).map(async (field) => {
+    const live = await readCounter(env, `ops:${day}:${field}`)
+    base[field] = live + (Number(legacy[field]) || 0)
+  }))
+  return base
+}
+
 export async function bumpOps(env, field, n = 1) {
-  if (!env?.BOT_MEMORY || !field) return
-  const day = utcDay()
-  const key = `ops_${day}`
-  const cur = await readOps(env, day)
-  cur[field] = (Number(cur[field]) || 0) + n
-  cur.updatedAt = Date.now()
-  await env.BOT_MEMORY.put(key, JSON.stringify(cur), { expirationTtl: OPS_TTL })
+  if (!field || !n) return
+  const key = `ops:${utcDay()}:${field}`
+  pendingOps.set(key, (pendingOps.get(key) || 0) + n)
+  const total = [...pendingOps.values()].reduce((sum, v) => sum + v, 0)
+  if (Date.now() - lastOpsFlush > 20000 || total >= 20) {
+    await flushOps(env)
+  }
 }
 
 export function normalizeModel(model) {
@@ -119,7 +148,9 @@ export function parseDataImage(image) {
   return { mime, data, dataUrl: `data:${mime};base64,${data}` }
 }
 
-export async function readIdeas(env, day = utcDay()) {
+const memoryIdeas = new Map()
+
+async function legacyIdeas(env, day) {
   if (!env?.BOT_MEMORY) return []
   try {
     const raw = await env.BOT_MEMORY.get(`ideas_${day}`)
@@ -131,8 +162,47 @@ export async function readIdeas(env, day = utcDay()) {
   }
 }
 
-async function writeIdeas(env, day, list) {
-  await env.BOT_MEMORY.put(`ideas_${day}`, JSON.stringify(list.slice(-200)), { expirationTtl: OPS_TTL })
+export async function readIdeas(env, day = utcDay()) {
+  const out = []
+  const seen = new Set()
+  const push = (item) => {
+    if (!item || !item.id || seen.has(item.id)) return
+    seen.add(item.id)
+    out.push(item)
+  }
+  if (env?.COUNTERS) {
+    try {
+      const res = await env.COUNTERS.prepare(
+        'SELECT payload FROM ideas WHERE day = ?1 ORDER BY created_at ASC LIMIT 200'
+      ).bind(day).all()
+      for (const row of res?.results || []) {
+        try { push(JSON.parse(row.payload)) } catch { /* fila ilegible */ }
+      }
+    } catch (err) {
+      console.warn('D1 ideas read:', err?.message || err)
+    }
+  }
+  for (const item of memoryIdeas.get(day) || []) push(item)
+  if (!out.length) {
+    for (const item of await legacyIdeas(env, day)) push(item)
+  }
+  return out
+}
+
+async function writeIdea(env, day, item) {
+  if (env?.COUNTERS) {
+    try {
+      await env.COUNTERS.prepare(
+        'INSERT INTO ideas (id, day, payload, created_at) VALUES (?1, ?2, ?3, ?4)'
+      ).bind(item.id, day, JSON.stringify(item), item.at || Date.now()).run()
+      return
+    } catch (err) {
+      console.warn('D1 ideas write:', err?.message || err)
+    }
+  }
+  const list = memoryIdeas.get(day) || []
+  list.push(item)
+  memoryIdeas.set(day, list.slice(-200))
 }
 
 export function ideaRateKey(ip) {
@@ -148,13 +218,9 @@ export async function handleIdeaPost({ body, ip, env, sendEmail }) {
     return { status: 400, payload: { error: 'too_short', message: 'Escribe al menos 8 caracteres.' } }
   }
 
-  if (env.BOT_MEMORY) {
-    const rk = ideaRateKey(ip)
-    const n = parseInt(await env.BOT_MEMORY.get(rk), 10) || 0
-    if (n >= 8) {
-      return { status: 429, payload: { error: 'rate_limited', message: 'Límite de 8 ideas por día. Gracias.' } }
-    }
-    await env.BOT_MEMORY.put(rk, String(n + 1), { expirationTtl: 86400 })
+  const gate = await consumeCapped(env, ideaRateKey(ip), 1, 8)
+  if (!gate.allowed) {
+    return { status: 429, payload: { error: 'rate_limited', message: 'Límite de 8 ideas por día. Gracias.' } }
   }
 
   const day = utcDay()
@@ -167,11 +233,7 @@ export async function handleIdeaPost({ body, ip, env, sendEmail }) {
     ip: String(ip || '').slice(0, 64),
     at: Date.now()
   }
-  if (env.BOT_MEMORY) {
-    const list = await readIdeas(env, day)
-    list.push(item)
-    await writeIdeas(env, day, list)
-  }
+  await writeIdea(env, day, item)
   await bumpOps(env, 'ideas', 1)
 
   const catLabel = cat === 'fix' ? 'Corrección' : cat === 'other' ? 'Propuesta' : 'Nueva Función'

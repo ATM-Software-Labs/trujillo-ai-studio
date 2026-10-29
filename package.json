@@ -15,7 +15,7 @@
     "deploy": "npm run build:web && wrangler deploy",
     "build": "npm run build:web",
     "build:web": "node scripts/extract-assets.mjs && node scripts/addThemes.cjs",
-    "test": "node scripts/test-memory.mjs && node --test scripts/test-admin-internal.mjs",
+    "test": "node scripts/test-memory.mjs && node --test scripts/test-admin-internal.mjs scripts/test-openai-gateway.mjs scripts/test-abuse.mjs",
     "register": "node scripts/register.js",
     "pages:dev": "npm --prefix web run pages:dev",
     "pages:build": "npm --prefix web run build"

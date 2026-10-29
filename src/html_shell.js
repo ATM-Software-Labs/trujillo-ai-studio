@@ -1,7 +1,7 @@
 import { ORIGIN, BRAND, jsonLdFor, hreflangLinks, localizedUrl } from './seo.js'
 import { makeNonce, shellCsp } from './security.js'
 
-const ASSET_V = '62'
+const ASSET_V = '63'
 
 function esc(s) {
   return String(s || '')
@@ -10,8 +10,9 @@ function esc(s) {
     .replace(/</g, '&lt;')
 }
 
-export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', urlLang = 'es', ogType = 'website', robots = 'index, follow', geo = null, nonce = '' }) {
+export function htmlShell({ title, description, path, kind = 'site', page = '', lang = 'es', urlLang = 'es', ogType = 'website', robots = 'index, follow', geo = null, nonce = '', turnstileSiteKey = '' }) {
   // Canonical follows the URL (unprefixed = es, /en/... = en), not the negotiated UI language.
+  const turnstileKey = String(turnstileSiteKey || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80)
   const canonicalUrl = localizedUrl(path, urlLang)
   const url = canonicalUrl
   const css = kind === 'app' ? '/assets/app.css' : '/assets/site.css'
@@ -79,6 +80,7 @@ ${hreflangLinks(path)}
 <div id="app"></div>
 <script${nonce ? ` nonce="${esc(nonce)}"` : ''}>
 window.TA_GEO=${JSON.stringify(geo && typeof geo === 'object' ? geo : {}).replace(/</g, '\\u003c')};
+window.TA_TURNSTILE_SITE_KEY=${JSON.stringify(turnstileKey)};
 try {
   if (localStorage.getItem('ta_lang') !== '${esc(lang)}') {
     localStorage.setItem('ta_lang', '${esc(lang)}');
@@ -86,7 +88,8 @@ try {
   }
 } catch(e) {}
 </script>
-${gsi}${marked}<script src="/assets/i18n/${esc(lang)}.js?v=${ASSET_V}" defer></script>
+${gsi}${marked}<script src="/assets/turnstile.js?v=${ASSET_V}" defer></script>
+<script src="/assets/i18n/${esc(lang)}.js?v=${ASSET_V}" defer></script>
 <script src="/assets/i18n.js?v=${ASSET_V}" defer></script>
 <script src="${js}?v=${ASSET_V}" defer></script>
 ${kind === 'app' ? `<script src="/assets/prompts.js?v=${ASSET_V}" defer></script>\n` : ''}<script src="/assets/atm-internal.js?v=${ASSET_V}" defer></script>
@@ -98,7 +101,7 @@ ${kind === 'app' ? `<script src="/assets/prompts.js?v=${ASSET_V}" defer></script
 export function htmlResponse(opts, status = 200, extraHeaders = {}) {
   const isApp = opts.kind === 'app'
   const nonce = makeNonce()
-  return new Response(htmlShell({ ...opts, nonce }), {
+  return new Response(htmlShell({ ...opts, nonce, turnstileSiteKey: opts.turnstileSiteKey || '' }), {
     status,
     headers: {
       'Content-Type': 'text/html; charset=UTF-8',
