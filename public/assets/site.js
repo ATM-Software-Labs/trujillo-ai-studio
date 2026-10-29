@@ -174,11 +174,13 @@
       '<div class="field-group"><div style="display:flex;justify-content:space-between;align-items:center"><label class="field-label">Contraseña</label>' +
       '<button type="button" id="forgot-link" class="ghost-link">¿Olvidaste la contraseña?</button></div>' +
       '<input type="password" class="field-input" id="login-password" placeholder="••••••••" required autocomplete="current-password"></div>' +
+      '<div id="ts-login"></div>' +
       '<button type="submit" class="btn-submit" id="login-btn">Continuar</button></form>' +
       '<form id="form-forgot" class="flex-col" style="display:none">' +
       '<div style="text-align:center"><div style="font-weight:650;color:#fff">Recuperar contraseña</div><p style="font-size:0.84rem;color:var(--muted);margin-top:4px">Te enviamos un código de 6 dígitos.</p></div>' +
       '<div class="field-group"><label class="field-label">Correo</label><input type="email" class="field-input" id="forgot-email" placeholder="tu@correo.com" required autocomplete="email"></div>' +
       '<input type="text" class="hp-field" id="forgot-website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+      '<div id="ts-forgot"></div>' +
       '<button type="submit" class="btn-submit" id="forgot-btn">Enviar código</button>' +
       '<button type="button" class="ghost-link" data-tab="login">← Volver</button></form>' +
       '<form id="form-reset" class="flex-col" style="display:none">' +
@@ -193,6 +195,7 @@
       '<div class="field-group"><label class="field-label">Correo</label><input type="email" class="field-input" id="reg-email" placeholder="tu@correo.com" required autocomplete="email"></div>' +
       '<div class="field-group"><label class="field-label">Contraseña (mín. 6)</label><input type="password" class="field-input" id="reg-password" placeholder="••••••••" minlength="6" required autocomplete="new-password"></div>' +
       '<input type="text" class="hp-field" id="reg-website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">' +
+      '<div id="ts-register"></div>' +
       '<button type="submit" class="btn-submit" id="reg-btn">Crear cuenta</button></form>' +
       '<form id="form-mail-confirm" class="flex-col" style="display:none;text-align:center">' +
       '<p style="font-size:0.9rem;color:#fff;font-weight:650">Confirma que eres una persona</p>' +
@@ -260,6 +263,7 @@
       window.location.href = '/';
       return;
     }
+    if (window.TA_mountTurnstileSlots) window.TA_mountTurnstileSlots();
     if (urlParams.get('tab') === 'forgot') switchAuthTab('forgot');
     if (urlParams.get('tab') === 'reset') {
       var qEmail = (urlParams.get('email') || '').trim().toLowerCase();

@@ -285,6 +285,29 @@ export function publicProfile(profile) {
   }
 }
 
+function profileSignature(p) {
+  return JSON.stringify({
+    enabled: p.enabled !== false,
+    name: p.name || '',
+    notes: p.notes || [],
+    summary: p.summary || '',
+    preferredStack: p.preferredStack || [],
+    expertiseLevel: p.expertiseLevel || '',
+    tonePreference: p.tonePreference || '',
+    timezone: p.timezone || '',
+    locale: p.locale || '',
+    length: p.length || ''
+  });
+}
+
+/** Los invitados no se persisten (el cliente ya reenvía el perfil). Las cuentas solo cuando cambia un hecho, no el contador de turnos. */
+export function shouldPersistProfile(before, after, { anonymous = false } = {}) {
+  if (anonymous) return false;
+  const a = sanitizeProfile(before);
+  const b = sanitizeProfile(after);
+  return profileSignature(a) !== profileSignature(b);
+}
+
 export function shouldSynthesize(profile) {
   const p = profile || emptyProfile()
   if (!p.enabled) return false
