@@ -71,7 +71,7 @@ id = "bab271312bfa4c84a483c6ee7b7a1756"
 [[d1_databases]]
 binding = "COUNTERS"
 database_name = "groq-discord-bot-counters"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "307ef858-33e1-4c7b-b50a-aa837d51a4d3"
 migrations_dir = "migrations"
 
 # Ráfagas por colo. Si la cuenta no admite el binding, el código sigue con
